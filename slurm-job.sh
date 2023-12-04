@@ -17,7 +17,7 @@
 pwd; hostname; date
 
 module load python
-cd /home/adam.knapp/blue_rlaubenbacher/adam.knapp/learning-and-control-of-abms/
+cd /home/adam.knapp/blue_rlaubenbacher/adam.knapp/data-assimilation/kalman/an-cockrell-abm/an-cockrell
 
 python3 an-cockrell-runner.py
 
