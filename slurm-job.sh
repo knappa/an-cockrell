@@ -16,7 +16,8 @@
 # all users. 
 pwd; hostname; date
 
-module load python
+module load python3
+
 cd /home/adam.knapp/blue_rlaubenbacher/adam.knapp/data-assimilation/kalman/an-cockrell-abm/an-cockrell
 
 python3 an-cockrell-runner.py
