@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "an_cockrell"
+version = "0.0.1"
+authors = [
+  { name="Adam C. Knapp", email="adam.knapp@medicine.ufl.edu" },
+]
+description = "Reimplementation of the An-Cockrell Comparative Biology Immune ABM"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "attrs",
+    "numpy",
+    "scipy",
+    "h5py",
+    "matplotlib",
+]
+
+[project.urls]
+Homepage = "https://github.com/knappa/an-cockrell"
+Issues = "https://github.com/knappa/an-cockrell/issues"
+
+[tool.black]
+line-length = 100
