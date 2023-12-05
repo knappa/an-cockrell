@@ -111,7 +111,7 @@ class AnCockrellModel:
     bat_t1ifn_init_prob: float = field(default=0.01)
 
     extracellular_virus_init_amount_lower: int = field(default=80)
-    extracellular_virus_init_amount_upper: int = field(default=120)
+    extracellular_virus_init_amount_range: int = field(default=40)
 
     bat_viral_lower_bound: float = field(default=1.0)
     human_viral_lower_bound: float = field(default=0.0)
@@ -625,7 +625,7 @@ class AnCockrellModel:
         for row, col in zip(rows, cols):
             self.extracellular_virus[row, col] = np.random.randint(
                 self.extracellular_virus_init_amount_lower,
-                self.extracellular_virus_init_amount_upper,
+                self.extracellular_virus_init_amount_lower + self.extracellular_virus_init_amount_range,
             )
 
     def infected_epi_function(self):
@@ -1994,7 +1994,8 @@ class AnCockrellModel:
                     "nk_pointer",
                     "nk_mask",
                     "num_dcs",
-                    "dc_pointer" "dc_mask",
+                    "dc_pointer",
+                    "dc_mask",
                 }:
                     continue
 
