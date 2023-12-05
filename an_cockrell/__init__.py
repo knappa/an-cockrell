@@ -132,7 +132,7 @@ class AnCockrellModel:
     activated_macro_tnf_secretion: float = field(default=1.0)
     activated_macro_il6_secretion: float = field(default=0.4)
     activated_macro_il10_secretion: float = field(default=1.0)
-    macro_antiactivation_threshold: float = field(default=-5.0)
+    macro_antiactivation_threshold: float = field(default=5.0)
     antiactivated_macro_il10_secretion: float = field(default=0.5)
     inflammasome_il1_secretion: float = field(default=1.0)
     inflammasome_macro_pre_il1_secretion: float = field(default=5.0)
@@ -1180,11 +1180,11 @@ class AnCockrellModel:
 
         # ACK: tracker isn't documented in the interface
         low_activated_macros = self.macro_mask & (
-            self.macro_activation < self.macro_antiactivation_threshold
+            self.macro_activation < -self.macro_antiactivation_threshold
         )
         locations = self.macro_locations[low_activated_macros].astype(np.int64)
         self.IL10[tuple(locations.T)] += self.antiactivated_macro_il10_secretion
-        self.macro_activation[low_activated_macros] += -self.macro_antiactivation_threshold
+        self.macro_activation[low_activated_macros] += self.macro_antiactivation_threshold
 
         # end
 
