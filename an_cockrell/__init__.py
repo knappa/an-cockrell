@@ -9,6 +9,7 @@ from attr import define, field
 from matplotlib import markers
 
 BIG_NUM = 1000
+VERBOSE = False
 
 
 class EpiType(IntEnum):
@@ -625,7 +626,8 @@ class AnCockrellModel:
         for row, col in zip(rows, cols):
             self.extracellular_virus[row, col] = np.random.randint(
                 self.extracellular_virus_init_amount_lower,
-                self.extracellular_virus_init_amount_lower + self.extracellular_virus_init_amount_range,
+                self.extracellular_virus_init_amount_lower
+                + self.extracellular_virus_init_amount_range,
             )
 
     def infected_epi_function(self):
@@ -889,7 +891,7 @@ class AnCockrellModel:
         self.pmn_locations += 0.1 * directions
         self.pmn_locations = np.mod(self.pmn_locations, self.geometry)
 
-        self._destack(self.pmn_mask, self.pmn_locations)
+        self._destack(mask=self.pmn_mask, locations=self.pmn_locations)
 
         #  set age age + 1
         self.pmn_age[self.pmn_mask] += 1
@@ -1614,6 +1616,7 @@ class AnCockrellModel:
         number: int = 1,
         loc: Optional[Union[Tuple[int, int], Tuple[float, float]]] = None,
     ):
+        number = min(number, self.GRID_WIDTH * self.GRID_HEIGHT - self.num_nks)
         if number > 1:
             for _ in range(number):
                 self.create_nk(loc=loc)
@@ -1691,6 +1694,11 @@ class AnCockrellModel:
         virus_eaten,
         cells_eaten,
     ):
+        if self.num_macros >= self.GRID_WIDTH * self.GRID_HEIGHT:
+            if VERBOSE:
+                print("Refusing to create a macrophage when there is no room for one.")
+            return
+
         if self.macro_pointer >= self.MAX_MACROPHAGES:
             self.compact_macro_arrays()
             # maybe the array is already compacted:
@@ -1749,8 +1757,11 @@ class AnCockrellModel:
         self.macro_pointer = self.num_macros
 
     def create_dc(self, *, loc=None):
-        # old signature:
-        # loc="tissue", trafficking_counter):
+        if self.num_dcs >= self.GRID_WIDTH * self.GRID_HEIGHT:
+            if VERBOSE:
+                print("Refusing to create a DC when there is no room for one.")
+            return
+
         if self.dc_pointer >= self.MAX_DCS:
             self.compact_dc_arrays()
             # maybe the array is already compacted:
@@ -1782,6 +1793,11 @@ class AnCockrellModel:
         age: int,
         jump_dist: Union[int, float],
     ):
+        if self.num_pmns >= self.GRID_WIDTH * self.GRID_HEIGHT:
+            if VERBOSE:
+                print("Refusing to create a PMN when there is no room for one.")
+            return
+
         if self.pmn_pointer >= self.MAX_PMNS:
             self.compact_pmn_arrays()
             # maybe the array is already compacted:
@@ -1852,13 +1868,27 @@ class AnCockrellModel:
         agent_indices = np.where(mask)[0]
         np.random.shuffle(agent_indices)
         for idx in agent_indices:
-            while location_used[tuple(locations[idx, :].astype(int))]:
-                # jump no more than a unit in an arbitrary direction
-                perturbation = np.random.normal(0, 0.5, size=2)
-                perturbation /= np.maximum(1.0, np.linalg.norm(perturbation))
-                locations[idx, :] += perturbation
+            if not location_used[tuple(locations[idx, :].astype(int))]:
+                location_used[tuple(locations[idx, :].astype(int))] = True
+            else:
+                # find nearest empty grid point and move there
+                unused_locations = np.argwhere(np.logical_not(location_used))
+                if unused_locations.shape[0] == 0:
+                    # no space, don't move
+                    continue
+                closest_idx = np.argmin(np.sum((locations[idx, :] - unused_locations) ** 2, axis=1))
+                locations[idx, :] += unused_locations[closest_idx, :] - locations[idx, :].astype(
+                    int
+                )
                 locations[idx, :] = np.mod(locations[idx, :], self.geometry)
-            location_used[tuple(locations[idx, :].astype(int))] = True
+                location_used[tuple(locations[idx, :].astype(int))] = True
+            # while location_used[tuple(locations[idx, :].astype(int))]:
+            #     # jump no more than a unit in an arbitrary direction
+            #     perturbation = np.random.normal(0, 0.5, size=2)
+            #     perturbation /= np.maximum(1.0, np.linalg.norm(perturbation))
+            #     locations[idx, :] += perturbation
+            #     locations[idx, :] = np.mod(locations[idx, :], self.geometry)
+            # location_used[tuple(locations[idx, :].astype(int))] = True
 
     def plot_agents(self, ax: plt.Axes, *, base_zorder: int = -1):
         ax.clear()

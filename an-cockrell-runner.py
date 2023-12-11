@@ -254,7 +254,9 @@ for sim_idx in trange(num_sims, desc="simulation"):
         system_health[sim_idx, step_idx] = model.system_health
 
 with h5py.File("run-statistics.hdf5", "w") as f:
-    f.create_dataset("param_list", (num_sims, len(variational_params)), dtype=np.float64, data=param_list)
+    f.create_dataset(
+        "param_list", (num_sims, len(variational_params)), dtype=np.float64, data=param_list
+    )
     f.create_dataset("total_T1IFN", (num_sims, num_steps), dtype=np.float64, data=total_T1IFN)
     f.create_dataset("total_TNF", (num_sims, num_steps), dtype=np.float64, data=total_TNF)
     f.create_dataset("total_IFNg", (num_sims, num_steps), dtype=np.float64, data=total_IFNg)
