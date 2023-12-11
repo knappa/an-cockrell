@@ -1264,6 +1264,8 @@ class AnCockrellModel:
         # set pyroptosed-macros pyroptosed-macros + 1
 
         num_to_pyroptose = np.sum(pyroptosis_mask)
+        if num_to_pyroptose <= 0:
+            return
         self.pyroptosed_macros += num_to_pyroptose
 
         # set IL1 pre-IL1
@@ -1276,24 +1278,34 @@ class AnCockrellModel:
 
         # I'm doing death first, since this clears a little space. Just in case.
         self.macro_mask[pyroptosis_mask] = False
-        self.num_macros -= np.sum(pyroptosis_mask)
+        self.num_macros -= num_to_pyroptose
         macro_creation_locations = np.array(
             np.where((self.epithelium == EpiType.Healthy) | (self.epithelium == EpiType.Infected))
         )
-        for loc_idx in np.random.choice(
-            macro_creation_locations.shape[1], num_to_pyroptose, replace=False
-        ):
-            self.create_macro(
-                loc=macro_creation_locations[:, loc_idx],
-                pre_il1=0,
-                pre_il18=0,
-                inflammasome_primed=False,
-                inflammasome_active=False,
-                macro_activation_level=0,
-                pyroptosis_counter=0,
-                virus_eaten=0,
-                cells_eaten=0,
-            )
+        num_macro_creation_locations = macro_creation_locations.shape[1]
+        if num_macro_creation_locations > 0:
+            for loc_idx in np.random.choice(
+                num_macro_creation_locations,
+                num_to_pyroptose,
+                replace=num_macro_creation_locations < num_to_pyroptose,
+            ):
+                self.create_macro(
+                    loc=macro_creation_locations[:, loc_idx],
+                    pre_il1=0,
+                    pre_il18=0,
+                    inflammasome_primed=False,
+                    inflammasome_active=False,
+                    macro_activation_level=0,
+                    pyroptosis_counter=0,
+                    virus_eaten=0,
+                    cells_eaten=0,
+                )
+        else:
+            if VERBOSE:
+                print(
+                    f"Not creating {num_to_pyroptose} replacement macrophages "
+                    "as there isn't anywhere they would go"
+                )
 
         # end
 
