@@ -1860,7 +1860,7 @@ class AnCockrellModel:
             constant_values=False,
         )
 
-    def _destack(self, mask: np.ndarray, locations: np.ndarray):
+    def _destack(self, mask: np.ndarray, locations: np.ndarray, randomize=False):
         """
         Make sure that no more than one agent lies on each patch.
         """
@@ -1868,27 +1868,33 @@ class AnCockrellModel:
         agent_indices = np.where(mask)[0]
         np.random.shuffle(agent_indices)
         for idx in agent_indices:
-            if not location_used[tuple(locations[idx, :].astype(int))]:
+            if randomize:
+                attempts = 10
+                while location_used[tuple(locations[idx, :].astype(int))] and attempts > 0:
+                    attempts -= 1
+                    # jump no more than a unit in an arbitrary direction
+                    perturbation = np.random.normal(0, 0.5, size=2)
+                    perturbation /= np.maximum(1.0, np.linalg.norm(perturbation))
+                    locations[idx, :] += perturbation
+                    locations[idx, :] = np.mod(locations[idx, :], self.geometry)
                 location_used[tuple(locations[idx, :].astype(int))] = True
             else:
-                # find nearest empty grid point and move there
-                unused_locations = np.argwhere(np.logical_not(location_used))
-                if unused_locations.shape[0] == 0:
-                    # no space, don't move
-                    continue
-                closest_idx = np.argmin(np.sum((locations[idx, :] - unused_locations) ** 2, axis=1))
-                locations[idx, :] += unused_locations[closest_idx, :] - locations[idx, :].astype(
-                    int
-                )
-                locations[idx, :] = np.mod(locations[idx, :], self.geometry)
-                location_used[tuple(locations[idx, :].astype(int))] = True
-            # while location_used[tuple(locations[idx, :].astype(int))]:
-            #     # jump no more than a unit in an arbitrary direction
-            #     perturbation = np.random.normal(0, 0.5, size=2)
-            #     perturbation /= np.maximum(1.0, np.linalg.norm(perturbation))
-            #     locations[idx, :] += perturbation
-            #     locations[idx, :] = np.mod(locations[idx, :], self.geometry)
-            # location_used[tuple(locations[idx, :].astype(int))] = True
+                if not location_used[tuple(locations[idx, :].astype(int))]:
+                    location_used[tuple(locations[idx, :].astype(int))] = True
+                else:
+                    # find nearest empty grid point and move there
+                    unused_locations = np.argwhere(np.logical_not(location_used))
+                    if unused_locations.shape[0] == 0:
+                        # no space, don't move
+                        continue
+                    closest_idx = np.argmin(
+                        np.sum((locations[idx, :] - unused_locations) ** 2, axis=1)
+                    )
+                    locations[idx, :] += unused_locations[closest_idx, :] - locations[
+                        idx, :
+                    ].astype(int)
+                    locations[idx, :] = np.mod(locations[idx, :], self.geometry)
+                    location_used[tuple(locations[idx, :].astype(int))] = True
 
     def plot_agents(self, ax: plt.Axes, *, base_zorder: int = -1):
         ax.clear()
