@@ -20,23 +20,6 @@ init_inoculum = 100
 num_sims = 10_000
 num_steps = 2016  # <- full run value
 
-total_T1IFN = np.zeros((num_sims, num_steps), dtype=np.float64)
-total_TNF = np.zeros((num_sims, num_steps), dtype=np.float64)
-total_IFNg = np.zeros((num_sims, num_steps), dtype=np.float64)
-total_IL6 = np.zeros((num_sims, num_steps), dtype=np.float64)
-total_IL1 = np.zeros((num_sims, num_steps), dtype=np.float64)
-total_IL8 = np.zeros((num_sims, num_steps), dtype=np.float64)
-total_IL10 = np.zeros((num_sims, num_steps), dtype=np.float64)
-total_IL12 = np.zeros((num_sims, num_steps), dtype=np.float64)
-total_IL18 = np.zeros((num_sims, num_steps), dtype=np.float64)
-total_extracellular_virus = np.zeros((num_sims, num_steps), dtype=np.float64)
-total_intracellular_virus = np.zeros((num_sims, num_steps), dtype=np.float64)
-apoptosis_eaten_counter = np.zeros((num_sims, num_steps), dtype=np.float64)
-infected_epis = np.zeros((num_sims, num_steps), dtype=np.float64)
-dead_epis = np.zeros((num_sims, num_steps), dtype=np.float64)
-apoptosed_epis = np.zeros((num_sims, num_steps), dtype=np.float64)
-system_health = np.zeros((num_sims, num_steps), dtype=np.float64)
-
 default_params = dict(
     GRID_WIDTH=51,
     GRID_HEIGHT=51,
@@ -193,65 +176,43 @@ variational_params = [
     "dc_ifng_secretion",
     "dc_il6_secretion",
     "dc_il6_max_uptake",
-    "extracellular_virus_diffusion_const",
-    "T1IFN_diffusion_const",
-    "PAF_diffusion_const",
-    "ROS_diffusion_const",
-    "P_DAMPS_diffusion_const",
-    "IFNg_diffusion_const",
-    "TNF_diffusion_const",
-    "IL6_diffusion_const",
-    "IL1_diffusion_const",
-    "IL10_diffusion_const",
-    "IL12_diffusion_const",
-    "IL18_diffusion_const",
-    "IL8_diffusion_const",
-    "extracellular_virus_cleanup_threshold",
-    "cleanup_threshold",
-    "evap_const_1",
-    "evap_const_2",
+    # # ACK's Executive Judgement: These are physics-like parameters and won't vary between individuals.
+    # "extracellular_virus_diffusion_const",
+    # "T1IFN_diffusion_const",
+    # "PAF_diffusion_const",
+    # "ROS_diffusion_const",
+    # "P_DAMPS_diffusion_const",
+    # "IFNg_diffusion_const",
+    # "TNF_diffusion_const",
+    # "IL6_diffusion_const",
+    # "IL1_diffusion_const",
+    # "IL10_diffusion_const",
+    # "IL12_diffusion_const",
+    # "IL18_diffusion_const",
+    # "IL8_diffusion_const",
+    # "extracellular_virus_cleanup_threshold",
+    # "cleanup_threshold",
+    # "evap_const_1",
+    # "evap_const_2",
 ]
 
-param_list = np.zeros((num_sims, len(variational_params)), dtype=np.float64)
-
-lhc = LatinHypercube(len(variational_params))
-sample = 1.0 + 0.5 * (lhc.random(n=num_sims) - 0.5)  # between 75% and 125%
-
-# noinspection PyTypeChecker
-for sim_idx in trange(num_sims, desc="simulation"):
-    # generate a perturbation of the default parameters
-    params = default_params.copy()
-    pct_perturbation = sample[sim_idx]
-    for pert_idx, param in enumerate(variational_params):
-        if isinstance(params[param], int):
-            params[param] = int(round(Decimal(pct_perturbation[pert_idx] * params[param]), 0))
-        else:
-            params[param] = pct_perturbation[pert_idx] * params[param]
-
-    param_list[sim_idx, :] = np.array([params[param] for param in variational_params])
-
-    model = an_cockrell.AnCockrellModel(**params)
-
-    # noinspection PyTypeChecker
-    for step_idx in trange(num_steps):
-        model.time_step()
-
-        total_T1IFN[sim_idx, step_idx] = model.total_T1IFN
-        total_TNF[sim_idx, step_idx] = model.total_TNF
-        total_IFNg[sim_idx, step_idx] = model.total_IFNg
-        total_IL6[sim_idx, step_idx] = model.total_IL6
-        total_IL1[sim_idx, step_idx] = model.total_IL1
-        total_IL8[sim_idx, step_idx] = model.total_IL8
-        total_IL10[sim_idx, step_idx] = model.total_IL10
-        total_IL12[sim_idx, step_idx] = model.total_IL12
-        total_IL18[sim_idx, step_idx] = model.total_IL18
-        total_extracellular_virus[sim_idx, step_idx] = model.total_extracellular_virus
-        total_intracellular_virus[sim_idx, step_idx] = model.total_intracellular_virus
-        apoptosis_eaten_counter[sim_idx, step_idx] = model.apoptosis_eaten_counter
-        infected_epis[sim_idx, step_idx] = np.sum(model.epithelium == EpiType.Infected)
-        dead_epis[sim_idx, step_idx] = np.sum(model.epithelium == EpiType.Dead)
-        apoptosed_epis[sim_idx, step_idx] = np.sum(model.epithelium == EpiType.Apoptosed)
-        system_health[sim_idx, step_idx] = model.system_health
+param_list = np.full((num_sims, len(variational_params)), -1, dtype=np.float64)
+total_T1IFN = np.full((num_sims, num_steps), -1, dtype=np.float64)
+total_TNF = np.full((num_sims, num_steps), -1, dtype=np.float64)
+total_IFNg = np.full((num_sims, num_steps), -1, dtype=np.float64)
+total_IL6 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+total_IL1 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+total_IL8 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+total_IL10 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+total_IL12 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+total_IL18 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+total_extracellular_virus = np.full((num_sims, num_steps), -1, dtype=np.float64)
+total_intracellular_virus = np.full((num_sims, num_steps), -1, dtype=np.float64)
+apoptosis_eaten_counter = np.full((num_sims, num_steps), -1, dtype=np.float64)
+infected_epis = np.full((num_sims, num_steps), -1, dtype=np.float64)
+dead_epis = np.full((num_sims, num_steps), -1, dtype=np.float64)
+apoptosed_epis = np.full((num_sims, num_steps), -1, dtype=np.float64)
+system_health = np.full((num_sims, num_steps), -1, dtype=np.float64)
 
 with h5py.File("run-statistics.hdf5", "w") as f:
     f.create_dataset(
@@ -288,3 +249,62 @@ with h5py.File("run-statistics.hdf5", "w") as f:
     f.create_dataset("dead_epis", (num_sims, num_steps), dtype=np.float64, data=dead_epis)
     f.create_dataset("apoptosed_epis", (num_sims, num_steps), dtype=np.float64, data=apoptosed_epis)
     f.create_dataset("system_health", (num_sims, num_steps), dtype=np.float64, data=system_health)
+
+
+lhc = LatinHypercube(len(variational_params))
+sample = 1.0 + 0.5 * (lhc.random(n=num_sims) - 0.5)  # between 75% and 125%
+
+# noinspection PyTypeChecker
+for sim_idx in trange(num_sims, desc="simulation"):
+    # generate a perturbation of the default parameters
+    params = default_params.copy()
+    pct_perturbation = sample[sim_idx]
+    for pert_idx, param in enumerate(variational_params):
+        if isinstance(params[param], int):
+            params[param] = int(round(Decimal(pct_perturbation[pert_idx] * params[param]), 0))
+        else:
+            params[param] = float(pct_perturbation[pert_idx] * params[param])
+
+    param_list[sim_idx, :] = np.array([params[param] for param in variational_params])
+
+    model = an_cockrell.AnCockrellModel(**params)
+
+    # noinspection PyTypeChecker
+    for step_idx in trange(num_steps):
+        model.time_step()
+
+        total_T1IFN[sim_idx, step_idx] = model.total_T1IFN
+        total_TNF[sim_idx, step_idx] = model.total_TNF
+        total_IFNg[sim_idx, step_idx] = model.total_IFNg
+        total_IL6[sim_idx, step_idx] = model.total_IL6
+        total_IL1[sim_idx, step_idx] = model.total_IL1
+        total_IL8[sim_idx, step_idx] = model.total_IL8
+        total_IL10[sim_idx, step_idx] = model.total_IL10
+        total_IL12[sim_idx, step_idx] = model.total_IL12
+        total_IL18[sim_idx, step_idx] = model.total_IL18
+        total_extracellular_virus[sim_idx, step_idx] = model.total_extracellular_virus
+        total_intracellular_virus[sim_idx, step_idx] = model.total_intracellular_virus
+        apoptosis_eaten_counter[sim_idx, step_idx] = model.apoptosis_eaten_counter
+        infected_epis[sim_idx, step_idx] = np.sum(model.epithelium == EpiType.Infected)
+        dead_epis[sim_idx, step_idx] = np.sum(model.epithelium == EpiType.Dead)
+        apoptosed_epis[sim_idx, step_idx] = np.sum(model.epithelium == EpiType.Apoptosed)
+        system_health[sim_idx, step_idx] = model.system_health
+
+    with h5py.File("run-statistics.hdf5", "r+") as f:
+        f["param_list"][sim_idx, :] = param_list[sim_idx, :]
+        f["total_T1IFN"][sim_idx, :] = total_T1IFN[sim_idx, :]
+        f["total_TNF"][sim_idx, :] = total_TNF[sim_idx, :]
+        f["total_IFNg"][sim_idx, :] = total_IFNg[sim_idx, :]
+        f["total_IL6"][sim_idx, :] = total_IL6[sim_idx, :]
+        f["total_IL1"][sim_idx, :] = total_IL1[sim_idx, :]
+        f["total_IL8"][sim_idx, :] = total_IL8[sim_idx, :]
+        f["total_IL10"][sim_idx, :] = total_IL10[sim_idx, :]
+        f["total_IL12"][sim_idx, :] = total_IL12[sim_idx, :]
+        f["total_IL18"][sim_idx, :] = total_IL18[sim_idx, :]
+        f["total_extracellular_virus"][sim_idx, :] = total_extracellular_virus[sim_idx, :]
+        f["total_intracellular_virus"][sim_idx, :] = total_intracellular_virus[sim_idx, :]
+        f["apoptosis_eaten_counter"][sim_idx, :] = apoptosis_eaten_counter[sim_idx, :]
+        f["infected_epis"][sim_idx, :] = infected_epis[sim_idx, :]
+        f["dead_epis"][sim_idx, :] = dead_epis[sim_idx, :]
+        f["apoptosed_epis"][sim_idx, :] = apoptosed_epis[sim_idx, :]
+        f["system_health"][sim_idx, :] = system_health[sim_idx, :]
