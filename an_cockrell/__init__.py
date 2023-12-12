@@ -571,9 +571,43 @@ class AnCockrellModel:
     def system_health(self) -> float:
         return (
             100.0
-            * np.sum(self.epithelium == EpiType.Healthy)
+            * self.healthy_epithelium_count
             / (self.GRID_WIDTH * self.GRID_HEIGHT)
         )
+
+    @property
+    def infected_epithelium_count(self) -> int:
+        return np.sum(self.epithelium == EpiType.Infected)
+
+    @property
+    def dead_epithelium_count(self) -> int:
+        return np.sum(self.epithelium == EpiType.Dead)
+
+    @property
+    def apoptosed_epithelium_count(self) -> int:
+        return np.sum(self.epithelium == EpiType.Apoptosed)
+
+    @property
+    def healthy_epithelium_count(self) -> int:
+        return np.sum(self.epithelium == EpiType.Healthy)
+
+    @property
+    def dc_count(self) -> int:
+        return self.num_dcs
+
+    @property
+    def nk_count(self) -> int:
+        return self.num_nks
+
+    @property
+    def pmn_count(self) -> int:
+        return self.num_pmns
+
+    @property
+    def macro_count(self) -> int:
+        return self.num_macros
+
+    ######################################################################
 
     def __attrs_post_init__(self):
         if self.is_bat:
