@@ -8,7 +8,7 @@ import numpy as np
 from attr import define, field
 from matplotlib import markers
 
-BIG_NUM = 1000
+BIG_NUM = 3000
 VERBOSE = False
 
 
