@@ -20,6 +20,24 @@ class EpiType(IntEnum):
     Apoptosed = 4
 
 
+def epitype_one_hot_encoding(e: Union[EpiType, np.ndarray], *, dtype=np.float64):
+    """
+    Computes the one-hot encoding for an instance of the categorical type EpiType
+
+    :param e: an EpiType
+    :param dtype: type of vector, default float64
+    :return: one hot encoding
+    """
+    if isinstance(e, np.ndarray):
+        one_hot = np.zeros((*e.shape, len(EpiType)), dtype=dtype)
+        for epitype in EpiType:
+            one_hot[..., epitype.value] = e == epitype
+    else:
+        one_hot = np.zeros(len(EpiType), dtype=dtype)
+        one_hot[e.value] = 1
+    return one_hot
+
+
 epithelial_cm = matplotlib.colors.ListedColormap(
     np.array(
         [
@@ -216,12 +234,6 @@ class AnCockrellModel:
             size=self.geometry,
         )
 
-    epithelium_apoptosis_counter = field(type=np.ndarray)
-
-    @epithelium_apoptosis_counter.default
-    def _epithelium_apoptosis_counter_factory(self):
-        return np.zeros(self.geometry, dtype=np.int64)
-
     ######################################################################
     # endothelium
 
@@ -276,23 +288,17 @@ class AnCockrellModel:
     def _IL1_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
-    IL18 = field(type=np.ndarray)
+    # IL2 = field(type=np.ndarray)  # TODO: this is unused?
+    #
+    # @IL2.default
+    # def _IL2_factory(self):
+    #     return np.zeros(self.geometry, dtype=np.float64)
 
-    @IL18.default
-    def _IL18_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
-
-    IL2 = field(type=np.ndarray)  # TODO: this is unused?
-
-    @IL2.default
-    def _IL2_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
-
-    IL4 = field(type=np.ndarray)  # TODO: this is unused?
-
-    @IL4.default
-    def _IL4_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    # IL4 = field(type=np.ndarray)  # TODO: this is unused?
+    #
+    # @IL4.default
+    # def _IL4_factory(self):
+    #     return np.zeros(self.geometry, dtype=np.float64)
 
     IL6 = field(type=np.ndarray)
 
@@ -318,10 +324,16 @@ class AnCockrellModel:
     def _IL12_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
-    IL17 = field(type=np.ndarray)  # TODO: This is unused?
+    # IL17 = field(type=np.ndarray)  # TODO: This is unused?
+    #
+    # @IL17.default
+    # def _IL17_factory(self):
+    #     return np.zeros(self.geometry, dtype=np.float64)
 
-    @IL17.default
-    def _IL17_factory(self):
+    IL18 = field(type=np.ndarray)
+
+    @IL18.default
+    def _IL18_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
     IFNg = field(type=np.ndarray)
@@ -569,11 +581,7 @@ class AnCockrellModel:
 
     @property
     def system_health(self) -> float:
-        return (
-            100.0
-            * self.healthy_epithelium_count
-            / (self.GRID_WIDTH * self.GRID_HEIGHT)
-        )
+        return 100.0 * self.healthy_epithelium_count / (self.GRID_WIDTH * self.GRID_HEIGHT)
 
     @property
     def infected_epithelium_count(self) -> int:
