@@ -34,7 +34,7 @@ def epitype_one_hot_encoding(e: Union[EpiType, np.ndarray], *, dtype=np.float64)
             one_hot[..., epitype.value] = e == epitype
     else:
         one_hot = np.zeros(len(EpiType), dtype=dtype)
-        one_hot[e.value] = 1
+        one_hot[e] = 1
     return one_hot
 
 
@@ -584,6 +584,14 @@ class AnCockrellModel:
         return 100.0 * self.healthy_epithelium_count / (self.GRID_WIDTH * self.GRID_HEIGHT)
 
     @property
+    def empty_epithelium_count(self) -> int:
+        return np.sum(self.epithelium == EpiType.Empty)
+
+    @property
+    def healthy_epithelium_count(self) -> int:
+        return np.sum(self.epithelium == EpiType.Healthy)
+
+    @property
     def infected_epithelium_count(self) -> int:
         return np.sum(self.epithelium == EpiType.Infected)
 
@@ -594,10 +602,6 @@ class AnCockrellModel:
     @property
     def apoptosed_epithelium_count(self) -> int:
         return np.sum(self.epithelium == EpiType.Apoptosed)
-
-    @property
-    def healthy_epithelium_count(self) -> int:
-        return np.sum(self.epithelium == EpiType.Healthy)
 
     @property
     def dc_count(self) -> int:
