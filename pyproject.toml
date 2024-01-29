@@ -19,7 +19,6 @@ classifiers = [
 dependencies = [
     "attrs",
     "numpy",
-    "scipy",
     "h5py",
     "matplotlib",
 ]

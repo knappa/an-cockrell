@@ -649,6 +649,12 @@ class AnCockrellModel:
         )  # Initial-inoculum from 25-150 increments of 25, run for 14 days (2016 steps)
 
     def infect(self, init_inoculum: int):
+        """
+        Infects the model at `init_inoculum` number of sites.
+
+        :param init_inoculum: number of infection sites
+        :return: nothing
+        """
         # to infect
         # create-initial-inoculum-makers initial-inoculum ;; this is just to make a random distribution of inoculum
         #  [set color red
@@ -677,6 +683,11 @@ class AnCockrellModel:
             )
 
     def infected_epi_function(self):
+        """
+        Update the infected epithelial cells.
+
+        :return: nothing
+        """
         # to infected-epi-function
         #
         # ;; necrosis from PMN burst
@@ -719,6 +730,11 @@ class AnCockrellModel:
         # end
 
     def virus_invade_epi_cell(self):
+        """
+        Run the portion of the model where the virus invades healthy epithelial cells.
+
+        :return: nothing
+        """
         # ACK: _actually_ only used in epi-function, contrary to comments. changed name to reflect this
         invasion_mask = (
             (self.epithelium == EpiType.Healthy)
@@ -734,6 +750,11 @@ class AnCockrellModel:
         self.epithelium[invasion_mask] = EpiType.Infected
 
     def virus_replicate(self):
+        """
+        Viral replication subroutine.
+
+        :return: nothing
+        """
         # to virus-replicate ;; called in infected-epi-function
         #   ;; extrusion of virus will consume cell-membrane, when this goes to 0 cell dies (no viral burst but does
         #      produce P/DAMPS)
@@ -786,6 +807,11 @@ class AnCockrellModel:
         # end
 
     def epi_apoptosis(self):
+        """
+        Simulate the apoptosis of infected epithelial cells.
+
+        :return: nothing
+        """
         # to epi-apoptosis
         #   if apoptosis-counter > apoptosis-threshold
         #    [set breed apoptosed-epis
@@ -805,6 +831,11 @@ class AnCockrellModel:
         # end
 
     def regrow_epis(self):
+        """
+        Regrow epithelial cells, after some time, which have healthy neighbors.
+
+        :return: nothing
+        """
         # to regrow-epis ;; patch command, regrows epis on empty patches if neighbors > 2 epis.
         # if count epis-here + count dead-epis-here + count apoptosed-epis-here + extracellular-virus = 0 ;; makes sure
         #                                                                                                    it is an
@@ -874,12 +905,21 @@ class AnCockrellModel:
         # end
 
     def dead_epi_update(self):
+        """
+        Update for dead epithelial cells.
+
+        :return: nothing
+        """
         self.P_DAMPS[self.epithelium == EpiType.Dead] += self.dead_epithelium_pdamps_secretion
         # to dead-epi-function
         # set P/DAMPs P/DAMPs + 1
         # end
 
     def pmn_update(self):
+        """
+        Update for PMNs
+        :return: nothing
+        """
         # to PMN-function ;; OMNs are made in activated-endo-function
 
         # if age > 36 ;; baseline 6 hour tissue lifespan
@@ -945,6 +985,11 @@ class AnCockrellModel:
         # end
 
     def nk_update(self):
+        """
+        Update for NKs.
+
+        :return: nothing
+        """
         # to NK-function
 
         locations = self.nk_locations[self.nk_mask].astype(np.int64)
@@ -1022,6 +1067,10 @@ class AnCockrellModel:
         # end
 
     def macro_update(self):
+        """
+        Update for macrophages.
+        :return: nothing
+        """
         # to macro-function
         #
         # ; check to see if macro gets infected
@@ -1237,6 +1286,11 @@ class AnCockrellModel:
         # end
 
     def inflammasome_function(self):
+        """
+        Update for the inflammasome.
+
+        :return: nothing
+        """
         # to inflammasome-function
         #  ;; inflammasome effects
         #
@@ -1303,6 +1357,10 @@ class AnCockrellModel:
         # end
 
     def pyroptosis(self):
+        """
+        Pyroptosis for macrophages.
+        :return: nothing
+        """
         # ACK: called via:  if pyroptosis-counter > 12  ;; 120 minutes
         pyroptosis_mask = self.macro_mask & (self.macro_pyroptosis_counter > 12)
 
@@ -1356,6 +1414,10 @@ class AnCockrellModel:
         # end
 
     def dc_update(self):
+        """
+        Update for DCs
+        :return: nothing
+        """
         # to DC-function
 
         # ACK: DC-location ignored, I'm omitting this
@@ -1450,6 +1512,10 @@ class AnCockrellModel:
         # end
 
     def epi_update(self):
+        """
+        Update for epithelial cells.
+        :return: nothing
+        """
         # to epi-function
         # ;; necrosis from PMN burst
         # if ROS-damage-counter > 2
@@ -1506,6 +1572,10 @@ class AnCockrellModel:
         # end
 
     def baseline_t1ifn_generation(self):
+        """
+        Baseline T1IFN generation
+        :return: nothing
+        """
         # to baseline-T1IFN-generation
         #  if random 100 = 1
         #       [set T1IFN T1IFN + 0.75
@@ -1518,6 +1588,10 @@ class AnCockrellModel:
         # end
 
     def metabolism(self):
+        """
+        General host metabolism.
+        :return: nothing
+        """
         # to metabolism
         #  if random 100 = 1
         #       [set P/DAMPs P/DAMPs + metabolic-byproduct]
@@ -1532,6 +1606,10 @@ class AnCockrellModel:
         # end
 
     def activated_endo_update(self):
+        """
+        Update for activated endothelial cells.
+        :return: nothing
+        """
         # to activated-endo-function ;; are made in epi-function
 
         # set PAF PAF + 1
@@ -1571,6 +1649,10 @@ class AnCockrellModel:
         # end
 
     def diffuse_functions(self):
+        """
+        Diffuse various molecules and molecule-like quantities.
+        :return: nothing
+        """
         self._diffuse_molecule_field(
             self.extracellular_virus, self.extracellular_virus_diffusion_const
         )
@@ -1591,7 +1673,7 @@ class AnCockrellModel:
     def _diffuse_molecule_field(
         molecule_field: np.ndarray, diffusion_constant: Union[float, np.float64]
     ):
-        # based on https://ccl.northwestern.edu/netlogo/docs/dict/diffuse.html
+        # based on description at https://ccl.northwestern.edu/netlogo/docs/dict/diffuse.html
         molecule_field[:, :] = (1 - diffusion_constant) * molecule_field + diffusion_constant * (
             np.roll(molecule_field, 1, axis=0)
             + np.roll(molecule_field, -1, axis=0)
@@ -1604,6 +1686,10 @@ class AnCockrellModel:
         ) / 8.0
 
     def cleanup(self):
+        """
+        Cleanup amounts of molecules below a threshold.
+        :return: nothing
+        """
         self.extracellular_virus[
             self.extracellular_virus < self.extracellular_virus_cleanup_threshold
         ] = 0
@@ -1621,6 +1707,10 @@ class AnCockrellModel:
         self.P_DAMPS[self.P_DAMPS < self.cleanup_threshold] = 0
 
     def evaporate(self):
+        """
+        Evaporate various molecules.
+        :return: nothing
+        """
         self.T1IFN *= self.evap_const_1
         self.IFNg *= self.evap_const_1
         self.TNF *= self.evap_const_1
@@ -1635,6 +1725,10 @@ class AnCockrellModel:
         self.P_DAMPS *= self.evap_const_2
 
     def time_step(self):
+        """
+        Advance the model one hour.
+        :return: nothing
+        """
         # if count apoptosed-epis + count dead-epis >=  2080 ;; this is 80% of the epi cells dead (total epis = 2601)
         #   [stop]
 
@@ -1674,6 +1768,12 @@ class AnCockrellModel:
         number: int = 1,
         loc: Optional[Union[Tuple[int, int], Tuple[float, float]]] = None,
     ):
+        """
+        Create one or more NKs
+        :param number: number of NKs to create (optional)
+        :param loc: location at which to create the NKs (optional)
+        :return:
+        """
         number = min(number, self.GRID_WIDTH * self.GRID_HEIGHT - self.num_nks)
         if number > 1:
             for _ in range(number):
@@ -1752,6 +1852,20 @@ class AnCockrellModel:
         virus_eaten,
         cells_eaten,
     ):
+        """
+        Create a macrophage.
+
+        :param loc: position to create macrophage at (optional, random if omitted)
+        :param pre_il1:
+        :param pre_il18:
+        :param inflammasome_primed:
+        :param inflammasome_active:
+        :param macro_activation_level:
+        :param pyroptosis_counter:
+        :param virus_eaten:
+        :param cells_eaten:
+        :return:
+        """
         if self.num_macros >= self.GRID_WIDTH * self.GRID_HEIGHT:
             if VERBOSE:
                 print("Refusing to create a macrophage when there is no room for one.")
@@ -1815,6 +1929,11 @@ class AnCockrellModel:
         self.macro_pointer = self.num_macros
 
     def create_dc(self, *, loc=None):
+        """
+        Create a DC
+        :param loc: location to create the DC (optional, random if omitted)
+        :return:
+        """
         if self.num_dcs >= self.GRID_WIDTH * self.GRID_HEIGHT:
             if VERBOSE:
                 print("Refusing to create a DC when there is no room for one.")
@@ -1847,10 +1966,18 @@ class AnCockrellModel:
     def create_pmn(
         self,
         *,
-        location: Union[np.ndarray, List, Tuple],
+        location: Optional[Union[np.ndarray, List, Tuple]],
         age: int,
         jump_dist: Union[int, float],
     ):
+        """
+        Create a PMN.
+
+        :param location: location to create the PMN (optional, random if omitted)
+        :param age:
+        :param jump_dist:
+        :return:
+        """
         if self.num_pmns >= self.GRID_WIDTH * self.GRID_HEIGHT:
             if VERBOSE:
                 print("Refusing to create a PMN when there is no room for one.")
@@ -1955,6 +2082,12 @@ class AnCockrellModel:
                     location_used[tuple(locations[idx, :].astype(int))] = True
 
     def plot_agents(self, ax: plt.Axes, *, base_zorder: int = -1):
+        """
+        Plot the agents (Epithelial cells, macrophages, NKs, PMNs, DCs, endothelial cells).
+        :param ax: Axes on which to plot the agents
+        :param base_zorder:
+        :return:
+        """
         ax.clear()
         # epithelium
         # * Blue Squares = Healthy Epithelial Cells
@@ -2037,7 +2170,14 @@ class AnCockrellModel:
         ax.set_xlim(0, self.geometry[0])
         ax.set_ylim(0, self.geometry[1])
 
-    def plot_field(self, ax: plt.Axes, *, field_name):
+    def plot_field(self, ax: plt.Axes, *, field_name: str):
+        """
+        Plot one of the molecular fields.
+
+        :param ax: The axis to plot upon.
+        :param field_name: which field to plot
+        :return:
+        """
         ax.clear()
         assert field_name in {
             "extracellular_virus",
@@ -2069,6 +2209,12 @@ class AnCockrellModel:
         )
 
     def save(self, filename: str, *, write_mode: str = "a"):
+        """
+        Record the model state to an HDF5 file.
+        :param filename:
+        :param write_mode: e.g. append, write
+        :return:
+        """
         # compute which class attributes should be saved
         rep = {attr: getattr(self, attr) for attr in dir(self) if attr[0] != "_"}
         rep = {k: v for k, v in rep.items() if isinstance(v, int | float | bool | np.ndarray)}
@@ -2111,6 +2257,12 @@ class AnCockrellModel:
 
     @classmethod
     def load(cls, filename: str, time: int) -> "AnCockrellModel":
+        """
+        Instantiate the model from an HDF5 file.
+        :param filename:
+        :param time: which time slice to load from
+        :return:
+        """
         with h5py.File(filename, "r+") as f:
             grp: h5py.Group = f[str(time)]
             # TODO: add new params
