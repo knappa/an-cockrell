@@ -24,7 +24,7 @@ def prerelease_local_scheme(version):
 
 
 setup(
-    ext_modules=cythonize("an_cockrell/util.pyx"),
+    ext_modules=cythonize("an_cockrell/util.py"),
     cmdclass={"build_ext": build_ext},
     python_requires=">=3.8",
     use_scm_version={"local_scheme": prerelease_local_scheme},
