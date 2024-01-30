@@ -1,13 +1,13 @@
 from enum import IntEnum
-from typing import Union, Tuple, Optional, List
+from typing import List, Optional, Tuple, Union
 
 import h5py
 import matplotlib
 import numpy as np
 from attr import define, field
-from matplotlib import pyplot as plt, markers
+from matplotlib import markers
+from matplotlib import pyplot as plt
 
-# noinspection PyUnresolvedReferences,PyPackageRequirements
 from .util import diffuse_molecule_field
 
 BIG_NUM = 3000
@@ -1668,9 +1668,7 @@ class AnCockrellModel:
         Diffuse various molecules and molecule-like quantities.
         :return: nothing
         """
-        diffuse_molecule_field(
-            self.extracellular_virus, self.extracellular_virus_diffusion_const
-        )
+        diffuse_molecule_field(self.extracellular_virus, self.extracellular_virus_diffusion_const)
         diffuse_molecule_field(self.T1IFN, self.T1IFN_diffusion_const)
         diffuse_molecule_field(self.PAF, self.PAF_diffusion_const)
         diffuse_molecule_field(self.ROS, self.ROS_diffusion_const)
