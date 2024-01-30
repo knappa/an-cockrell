@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "Cython>=3.0.8", 'setuptools_scm']
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -16,12 +16,12 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = [
-    "attrs",
-    "numpy",
-    "h5py",
-    "matplotlib",
-]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools_scm]
 
 [project.urls]
 Homepage = "https://github.com/knappa/an-cockrell"

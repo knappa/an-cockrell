@@ -1,12 +1,14 @@
 from enum import IntEnum
-from typing import List, Optional, Tuple, Union
+from typing import Union, Tuple, Optional, List
 
 import h5py
 import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 from attr import define, field
-from matplotlib import markers
+from matplotlib import pyplot as plt, markers
+
+# noinspection PyUnresolvedReferences,PyPackageRequirements
+from .util import diffuse_molecule_field
 
 BIG_NUM = 3000
 VERBOSE = False
@@ -1666,37 +1668,21 @@ class AnCockrellModel:
         Diffuse various molecules and molecule-like quantities.
         :return: nothing
         """
-        self._diffuse_molecule_field(
+        diffuse_molecule_field(
             self.extracellular_virus, self.extracellular_virus_diffusion_const
         )
-        self._diffuse_molecule_field(self.T1IFN, self.T1IFN_diffusion_const)
-        self._diffuse_molecule_field(self.PAF, self.PAF_diffusion_const)
-        self._diffuse_molecule_field(self.ROS, self.ROS_diffusion_const)
-        self._diffuse_molecule_field(self.P_DAMPS, self.P_DAMPS_diffusion_const)
-        self._diffuse_molecule_field(self.IFNg, self.IFNg_diffusion_const)
-        self._diffuse_molecule_field(self.TNF, self.TNF_diffusion_const)
-        self._diffuse_molecule_field(self.IL6, self.IL6_diffusion_const)
-        self._diffuse_molecule_field(self.IL1, self.IL1_diffusion_const)
-        self._diffuse_molecule_field(self.IL10, self.IL10_diffusion_const)
-        self._diffuse_molecule_field(self.IL12, self.IL12_diffusion_const)
-        self._diffuse_molecule_field(self.IL18, self.IL18_diffusion_const)
-        self._diffuse_molecule_field(self.IL8, self.IL8_diffusion_const)
-
-    @staticmethod
-    def _diffuse_molecule_field(
-        molecule_field: np.ndarray, diffusion_constant: Union[float, np.float64]
-    ):
-        # based on description at https://ccl.northwestern.edu/netlogo/docs/dict/diffuse.html
-        molecule_field[:, :] = (1 - diffusion_constant) * molecule_field + diffusion_constant * (
-            np.roll(molecule_field, 1, axis=0)
-            + np.roll(molecule_field, -1, axis=0)
-            + np.roll(molecule_field, 1, axis=1)
-            + np.roll(molecule_field, -1, axis=1)
-            + np.roll(np.roll(molecule_field, 1, axis=0), 1, axis=1)
-            + np.roll(np.roll(molecule_field, 1, axis=0), -1, axis=1)
-            + np.roll(np.roll(molecule_field, -1, axis=0), 1, axis=1)
-            + np.roll(np.roll(molecule_field, -1, axis=0), -1, axis=1)
-        ) / 8.0
+        diffuse_molecule_field(self.T1IFN, self.T1IFN_diffusion_const)
+        diffuse_molecule_field(self.PAF, self.PAF_diffusion_const)
+        diffuse_molecule_field(self.ROS, self.ROS_diffusion_const)
+        diffuse_molecule_field(self.P_DAMPS, self.P_DAMPS_diffusion_const)
+        diffuse_molecule_field(self.IFNg, self.IFNg_diffusion_const)
+        diffuse_molecule_field(self.TNF, self.TNF_diffusion_const)
+        diffuse_molecule_field(self.IL6, self.IL6_diffusion_const)
+        diffuse_molecule_field(self.IL1, self.IL1_diffusion_const)
+        diffuse_molecule_field(self.IL10, self.IL10_diffusion_const)
+        diffuse_molecule_field(self.IL12, self.IL12_diffusion_const)
+        diffuse_molecule_field(self.IL18, self.IL18_diffusion_const)
+        diffuse_molecule_field(self.IL8, self.IL8_diffusion_const)
 
     def cleanup(self):
         """
