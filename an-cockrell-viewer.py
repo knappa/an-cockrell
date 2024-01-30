@@ -3,10 +3,11 @@
 
 # # An-Cockrell model reimplementation
 
-import h5py
-import numpy as np
 import math
+
+import h5py
 import matplotlib.pyplot as plt
+import numpy as np
 
 with h5py.File("run-statistics.hdf5", "r") as f:
     num_keys = len(f.keys())

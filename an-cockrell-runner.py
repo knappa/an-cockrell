@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-import decimal
-from decimal import Decimal
-
-import an_cockrell
 import h5py
 import numpy as np
-from an_cockrell import EpiType
 from scipy.stats.qmc import LatinHypercube
 from tqdm.auto import trange
 
-decimal.getcontext().rounding = decimal.ROUND_HALF_EVEN
+import an_cockrell
+from an_cockrell import EpiType
 
 # # An-Cockrell model reimplementation
 
@@ -414,7 +410,7 @@ for sim_idx in trange(num_sims, desc="simulation"):
     pct_perturbation = sample[sim_idx]
     for pert_idx, param in enumerate(variational_params):
         if isinstance(params[param], int):
-            params[param] = int(round(Decimal(pct_perturbation[pert_idx] * params[param]), 0))
+            params[param] = int(round(float(pct_perturbation[pert_idx] * params[param])))
         else:
             params[param] = float(pct_perturbation[pert_idx] * params[param])
 

@@ -1,0 +1,10 @@
+setuptools~=68.2.0
+Cython~=3.0.8
+h5py~=3.10.0
+matplotlib~=3.8.2
+numpy~=1.26.3
+attrs~=23.2.0
+setuptools_scm~=8.0.4
+an_cockrell~=0.0.1
+scipy~=1.12.0
+tqdm~=4.66.1
