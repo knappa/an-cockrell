@@ -536,6 +536,10 @@ class AnCockrellModel:
     # non-static properties
 
     @property
+    def total_P_DAMPS(self) -> float:
+        return float(np.sum(self.P_DAMPS))
+
+    @property
     def total_T1IFN(self) -> float:
         return float(np.sum(self.T1IFN))
 
