@@ -563,7 +563,7 @@ class AnCockrellModel:
 
     @property
     def total_intracellular_virus(self) -> float:
-        return float(np.sum(self.epi_intracellular_virus[self.epithelium==EpiType.Infected]))
+        return float(np.sum(self.epi_intracellular_virus[self.epithelium == EpiType.Infected]))
 
     @property
     def system_health(self) -> float:
