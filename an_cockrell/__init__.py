@@ -651,9 +651,16 @@ class AnCockrellModel:
         #  ]
         # ask patches
         #   [set-background]
-        # end
+        #
+
+        grid_size: int = self.GRID_HEIGHT * self.GRID_WIDTH
+        init_inoculum = max(0, min(init_inoculum, grid_size)) # clamp to possible values
+
+        if init_inoculum == 0:
+            return
+
         rows, cols = np.divmod(
-            np.random.choice(self.GRID_HEIGHT * self.GRID_WIDTH, init_inoculum, replace=False),
+            np.random.choice(grid_size, init_inoculum, replace=False),
             self.GRID_WIDTH,
         )
 
