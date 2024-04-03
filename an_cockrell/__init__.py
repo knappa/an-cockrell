@@ -654,7 +654,7 @@ class AnCockrellModel:
         #
 
         grid_size: int = self.GRID_HEIGHT * self.GRID_WIDTH
-        init_inoculum = max(0, min(init_inoculum, grid_size)) # clamp to possible values
+        init_inoculum = max(0, min(init_inoculum, grid_size))  # clamp to possible values
 
         if init_inoculum == 0:
             return
