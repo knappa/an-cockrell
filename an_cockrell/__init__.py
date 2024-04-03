@@ -1788,7 +1788,9 @@ class AnCockrellModel:
         :return:
         """
         number = min(number, self.GRID_WIDTH * self.GRID_HEIGHT - self.num_nks)
-        if number > 1:
+        if number == 0:
+            return
+        elif number > 1:
             for _ in range(number):
                 self.create_nk(loc=loc)
         elif number == 1:
