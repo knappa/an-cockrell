@@ -19,8 +19,7 @@ with h5py.File("run-statistics.hdf5", "r") as f:
 
     for idx, key in enumerate(f.keys()):
         print(key)
-        row = idx // num_cols
-        col = idx % num_cols
+        row, col = divmod(idx, num_cols)
 
         data = np.array(f[key])
         mean = np.mean(data, axis=0)

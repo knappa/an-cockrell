@@ -290,18 +290,6 @@ class AnCockrellModel:
     def _IL1_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
-    # IL2 = field(type=np.ndarray)  # TODO: this is unused?
-    #
-    # @IL2.default
-    # def _IL2_factory(self):
-    #     return np.zeros(self.geometry, dtype=np.float64)
-
-    # IL4 = field(type=np.ndarray)  # TODO: this is unused?
-    #
-    # @IL4.default
-    # def _IL4_factory(self):
-    #     return np.zeros(self.geometry, dtype=np.float64)
-
     IL6 = field(type=np.ndarray)
 
     @IL6.default
@@ -325,12 +313,6 @@ class AnCockrellModel:
     @IL12.default
     def _IL12_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
-
-    # IL17 = field(type=np.ndarray)  # TODO: This is unused?
-    #
-    # @IL17.default
-    # def _IL17_factory(self):
-    #     return np.zeros(self.geometry, dtype=np.float64)
 
     IL18 = field(type=np.ndarray)
 
@@ -538,6 +520,10 @@ class AnCockrellModel:
     # non-static properties
 
     @property
+    def total_P_DAMPS(self) -> float:
+        return float(np.sum(self.P_DAMPS))
+
+    @property
     def total_T1IFN(self) -> float:
         return float(np.sum(self.T1IFN))
 
@@ -579,7 +565,7 @@ class AnCockrellModel:
 
     @property
     def total_intracellular_virus(self) -> float:
-        return float(np.sum(self.epi_intracellular_virus))
+        return float(np.sum(self.epi_intracellular_virus[self.epithelium == EpiType.Infected]))
 
     @property
     def system_health(self) -> float:
@@ -667,9 +653,16 @@ class AnCockrellModel:
         #  ]
         # ask patches
         #   [set-background]
-        # end
+        #
+
+        grid_size: int = self.GRID_HEIGHT * self.GRID_WIDTH
+        init_inoculum = max(0, min(init_inoculum, grid_size))  # clamp to possible values
+
+        if init_inoculum == 0:
+            return
+
         rows, cols = np.divmod(
-            np.random.choice(self.GRID_HEIGHT * self.GRID_WIDTH, init_inoculum, replace=False),
+            np.random.choice(grid_size, init_inoculum, replace=False),
             self.GRID_WIDTH,
         )
 
@@ -712,6 +705,9 @@ class AnCockrellModel:
         self.P_DAMPS[mask] += self.epithelium_pdamps_secretion_on_death
 
         self.epithelium_ros_damage_counter[infected_mask] += self.ROS[infected_mask]
+
+        # clear intracellular virus counter
+        self.epi_intracellular_virus[mask] = 0
 
         # virus-replicate
         self.virus_replicate()
@@ -770,6 +766,9 @@ class AnCockrellModel:
         self.epithelium[burst_mask] = EpiType.Dead
         self.P_DAMPS[burst_mask] += self.dead_epithelium_pdamps_burst_secretion
 
+        # clear intracellular virus counter
+        self.epi_intracellular_virus[burst_mask] = 0
+
         # ;; intracellular-virus is essentially a counter that determines time it takes to ramp up viral synthesis
         # ;; once the threshold viral-incubation-threshold is reached the cell leaks virus to extracellular-virus
         # ;; and takes one cell-membrane away until cell dies
@@ -826,6 +825,9 @@ class AnCockrellModel:
             self.epi_apoptosis_counter > self.epi_apoptosis_threshold
         )
         self.epithelium[epis_to_apoptose_mask] = EpiType.Apoptosed
+
+        # clear intracellular virus counter
+        self.epi_intracellular_virus[epis_to_apoptose_mask] = 0
 
         #   set apoptosis-counter apoptosis-counter + 1
         self.epi_apoptosis_counter[infected_epi_mask] += 1
@@ -1219,6 +1221,11 @@ class AnCockrellModel:
             tuple(self.macro_locations[macros_at_apoptosed_epi].T.astype(np.int64))
         ] = EpiType.Empty
 
+        # clear intracellular virus counter
+        self.epi_intracellular_virus[
+            tuple(self.macro_locations[macros_at_apoptosed_epi].T.astype(np.int64))
+        ] = 0
+
         #    ;; of dead epis
         #     if count dead-epis-here > 0
         #      [ask dead-epis-here [die]
@@ -1231,6 +1238,9 @@ class AnCockrellModel:
         )
         self.macro_cells_eaten[dead_epis] += 1
         self.epithelium[tuple(self.macro_locations[dead_epis].T.astype(np.int64))] = EpiType.Empty
+
+        # clear intracellular virus counter
+        self.epi_intracellular_virus[tuple(self.macro_locations[dead_epis].T.astype(np.int64))] = 0
 
         # if macro-activation-level > 5 ;; This is where decreased sensitivity to P/DAMPS can be seen. Link
         #                                  macro-activation-level to Inflammasome variable?
@@ -1541,6 +1551,9 @@ class AnCockrellModel:
         self.epithelium[ros_damage_mask] = EpiType.Dead
         self.P_DAMPS[ros_damage_mask] += self.epithelium_pdamps_secretion_on_death
 
+        # clear intracellular virus counter
+        self.epi_intracellular_virus[ros_damage_mask] = 0
+
         #   metabolism
         self.metabolism()
 
@@ -1759,7 +1772,9 @@ class AnCockrellModel:
         :return:
         """
         number = min(number, self.GRID_WIDTH * self.GRID_HEIGHT - self.num_nks)
-        if number > 1:
+        if number == 0:
+            return
+        elif number > 1:
             for _ in range(number):
                 self.create_nk(loc=loc)
         elif number == 1:
