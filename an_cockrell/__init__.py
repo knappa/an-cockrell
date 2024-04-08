@@ -656,7 +656,7 @@ class AnCockrellModel:
         #
 
         grid_size: int = self.GRID_HEIGHT * self.GRID_WIDTH
-        init_inoculum = max(0, min(init_inoculum, grid_size)) # clamp to possible values
+        init_inoculum = max(0, min(init_inoculum, grid_size))  # clamp to possible values
 
         if init_inoculum == 0:
             return
@@ -1772,7 +1772,9 @@ class AnCockrellModel:
         :return:
         """
         number = min(number, self.GRID_WIDTH * self.GRID_HEIGHT - self.num_nks)
-        if number > 1:
+        if number == 0:
+            return
+        elif number > 1:
             for _ in range(number):
                 self.create_nk(loc=loc)
         elif number == 1:
