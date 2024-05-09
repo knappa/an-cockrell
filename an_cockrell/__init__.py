@@ -81,13 +81,11 @@ class AnCockrellModel:
     inflammasome_priming_threshold: float = field(default=1.0)  # 5.0 for bats
 
     viral_carrying_capacity: int = field(default=500)
-    # resistance_to_infection: int = field(default=75)
     susceptibility_to_infection: int = field(default=77)
     human_endo_activation: int = field(default=5)
     bat_endo_activation: int = field(default=10)
     bat_metabolic_byproduct: float = field(default=2.0)
     human_metabolic_byproduct: float = field(default=0.2)
-    resistance_to_infection: int = field(default=75)
     viral_incubation_threshold: int = field(default=60)
 
     # summary and statistical variables
@@ -1215,9 +1213,9 @@ class AnCockrellModel:
         )
         self.macro_cells_eaten[macros_at_apoptosed_epi] += 1
         self.apoptosis_eaten_counter += np.sum(macros_at_apoptosed_epi)
-        self.epithelium[
-            tuple(self.macro_locations[macros_at_apoptosed_epi].T.astype(np.int64))
-        ] = EpiType.Empty
+        self.epithelium[tuple(self.macro_locations[macros_at_apoptosed_epi].T.astype(np.int64))] = (
+            EpiType.Empty
+        )
 
         # clear intracellular virus counter
         self.epi_intracellular_virus[
@@ -2299,7 +2297,6 @@ class AnCockrellModel:
                 bat_endo_activation=grp["bat_endo_activation"][()],
                 bat_metabolic_byproduct=grp["bat_metabolic_byproduct"][()],
                 human_metabolic_byproduct=grp["human_metabolic_byproduct"][()],
-                resistance_to_infection=grp["resistance_to_infection"][()],
                 viral_incubation_threshold=grp["viral_incubation_threshold"][()],
                 MAX_PMNS=grp["MAX_PMNS"][()],
                 MAX_DCS=grp["MAX_DCS"][()],
