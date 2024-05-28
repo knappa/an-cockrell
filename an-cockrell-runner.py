@@ -35,7 +35,6 @@ default_params = dict(
     bat_endo_activation=10,
     bat_metabolic_byproduct=2.0,
     human_metabolic_byproduct=0.2,
-    # NOT USED resistance_to_infection=75,
     viral_incubation_threshold=60,
     epi_apoptosis_threshold_lower=450,
     epi_apoptosis_threshold_range=100,
@@ -120,7 +119,6 @@ variational_params = [
     "susceptibility_to_infection",
     "human_endo_activation",
     "human_metabolic_byproduct",
-    # NOT USED "resistance_to_infection",
     "viral_incubation_threshold",
     "epi_apoptosis_threshold_lower",
     "epi_apoptosis_threshold_range",
@@ -148,7 +146,6 @@ variational_params = [
     "activated_endo_pmn_spawn_dist",
     "extracellular_virus_init_amount_lower",
     "extracellular_virus_init_amount_range",
-    "human_viral_lower_bound",
     "human_t1ifn_effect_scale",
     "pmn_max_age",
     "pmn_ros_secretion_on_death",
@@ -174,6 +171,7 @@ variational_params = [
     "dc_il6_secretion",
     "dc_il6_max_uptake",
     # # ACK's Executive Judgement: These are physics-like parameters and won't vary between individuals.
+    # "human_viral_lower_bound", 0.0
     # "extracellular_virus_diffusion_const",
     # "T1IFN_diffusion_const",
     # "PAF_diffusion_const",
@@ -212,7 +210,7 @@ dead_epis = np.full((num_sims, num_steps), -1, dtype=np.float64)
 apoptosed_epis = np.full((num_sims, num_steps), -1, dtype=np.float64)
 system_health = np.full((num_sims, num_steps), -1, dtype=np.float64)
 
-with h5py.File("run-statistics.hdf5", "w") as f:
+with h5py.File("simulation-statistics.hdf5", "w") as f:
     f.create_dataset(
         "param_list",
         (num_sims, len(variational_params)),
@@ -453,7 +451,7 @@ for sim_idx in trange(num_sims, desc="simulation"):
         apoptosed_epis[sim_idx, step_idx] = np.sum(model.epithelium == EpiType.Apoptosed)
         system_health[sim_idx, step_idx] = model.system_health
 
-    with h5py.File("run-statistics.hdf5", "r+") as f:
+    with h5py.File("simulation-statistics.hdf5", "r+") as f:
         f["param_list"][sim_idx, :] = param_list[sim_idx, :]
         f["total_P_DAMPS"][sim_idx, :] = total_P_DAMPS[sim_idx, :]
         f["total_T1IFN"][sim_idx, :] = total_T1IFN[sim_idx, :]
