@@ -974,6 +974,8 @@ class AnCockrellModel:
         self.pmn_dirs += (
             (np.random.rand(self.MAX_PMNS) - np.random.rand(self.MAX_PMNS)) * np.pi / 4.0
         )
+        self.pmn_dirs[np.where(self.pmn_dirs > np.pi)] -= 2 * np.pi
+        self.pmn_dirs[np.where(self.pmn_dirs < -np.pi)] += 2 * np.pi
         directions = np.stack([np.cos(self.pmn_dirs), np.sin(self.pmn_dirs)], axis=1)
         self.pmn_locations += 0.1 * directions
         self.pmn_locations = np.mod(self.pmn_locations, self.geometry)
@@ -1051,6 +1053,8 @@ class AnCockrellModel:
         #   [wiggle
         #   ]
         self.nk_dirs += (np.random.rand(self.MAX_NKS) - np.random.rand(self.MAX_NKS)) * np.pi / 4.0
+        self.nk_dirs[np.where(self.nk_dirs > np.pi)] -= 2 * np.pi
+        self.nk_dirs[np.where(self.nk_dirs < -np.pi)] += 2 * np.pi
         directions = np.stack([np.cos(self.nk_dirs), np.sin(self.nk_dirs)], axis=1)
         self.nk_locations += 0.1 * directions
         self.nk_locations = np.mod(self.nk_locations, self.geometry)
@@ -1164,6 +1168,8 @@ class AnCockrellModel:
             * np.pi
             / 4.0
         )
+        self.macro_dirs[np.where(self.macro_dirs > np.pi)] -= 2 * np.pi
+        self.macro_dirs[np.where(self.macro_dirs < -np.pi)] += 2 * np.pi
         self.macro_locations += 0.1 * np.stack(
             [np.cos(self.macro_dirs), np.sin(self.macro_dirs)], axis=1
         )
@@ -1510,6 +1516,8 @@ class AnCockrellModel:
         #    ]
 
         self.dc_dirs += (np.random.rand(self.MAX_DCS) - np.random.rand(self.MAX_DCS)) * np.pi / 4.0
+        self.dc_dirs[np.where(self.dc_dirs > np.pi)] -= 2 * np.pi
+        self.dc_dirs[np.where(self.dc_dirs < -np.pi)] += 2 * np.pi
         self.dc_locations += 0.1 * np.stack([np.cos(self.dc_dirs), np.sin(self.dc_dirs)], axis=1)
         self.dc_locations = np.mod(self.dc_locations, self.geometry)
 
@@ -1807,7 +1815,7 @@ class AnCockrellModel:
             else:
                 self.nk_locations[self.nk_pointer, :] = loc
 
-            self.nk_dirs[self.nk_pointer] = 2 * np.pi * np.random.rand()
+            self.nk_dirs[self.nk_pointer] = 2 * np.pi * np.random.rand() - np.pi
             self.nk_age[self.nk_pointer] = 0
             self.nk_mask[self.nk_pointer] = True
             self.num_nks += 1
@@ -1899,7 +1907,7 @@ class AnCockrellModel:
         else:
             self.macro_locations[self.macro_pointer, :] = loc
 
-        self.macro_dirs[self.macro_pointer] = 2 * np.pi * np.random.rand()
+        self.macro_dirs[self.macro_pointer] = 2 * np.pi * np.random.rand() - np.pi
 
         self.macro_internal_virus[self.macro_pointer] = 0
         # self.macro_infected[self.macro_pointer] = False
@@ -1965,7 +1973,7 @@ class AnCockrellModel:
         else:
             self.dc_locations[self.dc_pointer, :] = loc
 
-        self.dc_dirs[self.dc_pointer] = 2 * np.pi * np.random.rand()
+        self.dc_dirs[self.dc_pointer] = 2 * np.pi * np.random.rand() - np.pi
         self.dc_mask[self.dc_pointer] = True
         self.num_dcs += 1
         self.dc_pointer += 1
@@ -2007,7 +2015,7 @@ class AnCockrellModel:
         else:
             self.pmn_locations[self.pmn_pointer, :] = np.array(location).astype(np.float64)
 
-        theta = 2 * np.pi * np.random.rand()
+        theta = 2 * np.pi * np.random.rand() - np.pi
         self.pmn_dirs[self.pmn_pointer] = theta
         self.pmn_locations[self.pmn_pointer] = np.mod(
             self.pmn_locations[self.pmn_pointer]
@@ -2254,7 +2262,7 @@ class AnCockrellModel:
                     continue
 
                 if isinstance(v, int | float | bool):
-                    grp.create_dataset(k, shape=(), dtype=type(v), data=v, compression='gz')
+                    grp.create_dataset(k, shape=(), dtype=type(v), data=v, compression="gz")
                 else:
                     # numpy array
                     if np.issubdtype(v.dtype, np.object_):
@@ -2267,7 +2275,7 @@ class AnCockrellModel:
                         v = v[self.nk_mask]
                     elif k.startswith("dc"):
                         v = v[self.dc_mask]
-                    grp.create_dataset(k, shape=v.shape, dtype=v.dtype, data=v, compression='gz')
+                    grp.create_dataset(k, shape=v.shape, dtype=v.dtype, data=v, compression="gz")
 
     @classmethod
     def load(cls, filename: str, time: int) -> "AnCockrellModel":
