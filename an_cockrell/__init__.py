@@ -381,11 +381,12 @@ class AnCockrellModel:
     def _macro_dirs_factory(self):
         return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
 
-    macro_internal_virus = field(type=np.ndarray)
-
-    @macro_internal_virus.default
-    def _macro_internal_virus_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
+    # NOTE: unused
+    # macro_internal_virus = field(type=np.ndarray)
+    #
+    # @macro_internal_virus.default
+    # def _macro_internal_virus_factory(self):
+    #     return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
 
     macro_activation = field(type=np.ndarray)
 
@@ -441,11 +442,12 @@ class AnCockrellModel:
     def _macro_inflammasome_active_factory(self):
         return np.zeros(self.MAX_MACROPHAGES, dtype=bool)
 
-    macro_swollen = field(type=np.ndarray)
-
-    @macro_swollen.default
-    def _macro_swollen_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=bool)
+    # NOTE: unused
+    # macro_swollen = field(type=np.ndarray)
+    #
+    # @macro_swollen.default
+    # def _macro_swollen_factory(self):
+    #     return np.zeros(self.MAX_MACROPHAGES, dtype=bool)
 
     @property
     def macro_phago_counter(self) -> np.ndarray:
@@ -477,11 +479,12 @@ class AnCockrellModel:
     def _nk_dirs_factory(self):
         return np.zeros(self.MAX_NKS, dtype=np.float64)
 
-    nk_age = field(type=np.ndarray)
-
-    @nk_age.default
-    def _nk_age_factory(self):
-        return np.zeros(self.MAX_NKS, dtype=np.int64)
+    # unused
+    # nk_age = field(type=np.ndarray)
+    #
+    # @nk_age.default
+    # def _nk_age_factory(self):
+    #     return np.zeros(self.MAX_NKS, dtype=np.int64)
 
     ######################################################################
 
@@ -1185,13 +1188,13 @@ class AnCockrellModel:
         #   ifelse macro-phago-counter >= macro-phago-limit ;; this will eventually be pyroptosis
         #     [set size 2]
         over_limit_mask = self.macro_mask & (self.macro_phago_counter >= self.macro_phago_limit)
-        self.macro_swollen[over_limit_mask] = True
+        # self.macro_swollen[over_limit_mask] = True # NOTE unused
 
         #     [;; PHAGOCYTOSIS
         #     set size 1
 
         under_limit_mask = self.macro_mask & (self.macro_phago_counter < self.macro_phago_limit)
-        self.macro_swollen[under_limit_mask] = False
+        # self.macro_swollen[under_limit_mask] = False # NOTE unused
 
         #     ;; of virus, uses local variable "q" to represent amount of virus eaten (avoid negative values)
         #     if extracellular-virus > 0
@@ -1816,7 +1819,7 @@ class AnCockrellModel:
                 self.nk_locations[self.nk_pointer, :] = loc
 
             self.nk_dirs[self.nk_pointer] = 2 * np.pi * np.random.rand() - np.pi
-            self.nk_age[self.nk_pointer] = 0
+            # self.nk_age[self.nk_pointer] = 0 unused
             self.nk_mask[self.nk_pointer] = True
             self.num_nks += 1
             self.nk_pointer += 1
@@ -1826,7 +1829,7 @@ class AnCockrellModel:
     def _compact_nk_arrays(self):
         self.nk_locations[: self.num_nks] = self.nk_locations[self.nk_mask]
         self.nk_dirs[: self.num_nks] = self.nk_dirs[self.nk_mask]
-        self.nk_age[: self.num_nks] = self.nk_age[self.nk_mask]
+        # self.nk_age[: self.num_nks] = self.nk_age[self.nk_mask] unused
 
         self.nk_mask[: self.num_nks] = True
         self.nk_mask[self.num_nks :] = False
@@ -1848,12 +1851,13 @@ class AnCockrellModel:
             mode="constant",
             constant_values=0.0,
         )
-        self.nk_age = np.pad(
-            self.nk_age,
-            pad_width=np.array((0, old_max_nks)),
-            mode="constant",
-            constant_values=0,
-        )
+        # unused
+        # self.nk_age = np.pad(
+        #     self.nk_age,
+        #     pad_width=np.array((0, old_max_nks)),
+        #     mode="constant",
+        #     constant_values=0,
+        # )
         self.nk_mask = np.pad(
             self.nk_mask,
             pad_width=np.array((0, old_max_nks)),
@@ -1909,7 +1913,7 @@ class AnCockrellModel:
 
         self.macro_dirs[self.macro_pointer] = 2 * np.pi * np.random.rand() - np.pi
 
-        self.macro_internal_virus[self.macro_pointer] = 0
+        # self.macro_internal_virus[self.macro_pointer] = 0 NOTE: unused
         # self.macro_infected[self.macro_pointer] = False
         self.macro_pre_il1[self.macro_pointer] = pre_il1
         self.macro_pre_il18[self.macro_pointer] = pre_il18
@@ -1919,7 +1923,7 @@ class AnCockrellModel:
         self.macro_pyroptosis_counter[self.macro_pointer] = pyroptosis_counter
         self.macro_virus_eaten[self.macro_pointer] = virus_eaten
         self.macro_cells_eaten[self.macro_pointer] = cells_eaten
-        self.macro_swollen[self.macro_pointer] = False
+        # self.macro_swollen[self.macro_pointer] = False # NOTE unused
 
         self.macro_mask[self.macro_pointer] = True
         self.num_macros += 1
@@ -1928,7 +1932,7 @@ class AnCockrellModel:
     def compact_macro_arrays(self):
         self.macro_locations[: self.num_macros] = self.macro_locations[self.macro_mask]
         self.macro_dirs[: self.num_macros] = self.macro_dirs[self.macro_mask]
-        self.macro_internal_virus[: self.num_macros] = self.macro_internal_virus[self.macro_mask]
+        # self.macro_internal_virus[: self.num_macros] = self.macro_internal_virus[self.macro_mask] NOTE unused
         self.macro_activation[: self.num_macros] = self.macro_activation[self.macro_mask]
         # self.macro_infected[: self.num_macros] = self.macro_infected[self.macro_mask]
         self.macro_cells_eaten[: self.num_macros] = self.macro_cells_eaten[self.macro_mask]
@@ -1944,7 +1948,7 @@ class AnCockrellModel:
         self.macro_inflammasome_active[: self.num_macros] = self.macro_inflammasome_active[
             self.macro_mask
         ]
-        self.macro_swollen[: self.num_macros] = self.macro_swollen[self.macro_mask]
+        # self.macro_swollen[: self.num_macros] = self.macro_swollen[self.macro_mask] # NOTE unused
 
         self.macro_mask[: self.num_macros] = True
         self.macro_mask[self.num_macros :] = False
@@ -2211,13 +2215,10 @@ class AnCockrellModel:
             "TNF",
             "IL1",
             "IL18",
-            "IL2",
-            "IL4",
             "IL6",
             "IL8",
             "IL10",
             "IL12",
-            "IL17",
             "IFNg",
             "T1IFN",
         }, "Unknown field!"
