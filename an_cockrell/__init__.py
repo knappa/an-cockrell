@@ -21,6 +21,12 @@ class EpiType(IntEnum):
     Apoptosed = 4
 
 
+class EndoType(IntEnum):
+    Normal = 0
+    Activated = 1
+    Dead = 2
+
+
 def epitype_one_hot_encoding(e: Union[EpiType, np.ndarray], *, dtype=np.float64):
     """
     Computes the one-hot encoding for an instance of the categorical type EpiType
@@ -50,12 +56,6 @@ epithelial_cm = matplotlib.colors.ListedColormap(
         ]
     )
 )
-
-
-class EndoType(IntEnum):
-    Normal = 0
-    Activated = 1
-    Dead = 2
 
 
 # noinspection PyPep8Naming
