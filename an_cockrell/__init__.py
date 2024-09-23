@@ -257,11 +257,19 @@ class AnCockrellModel:
     def _extracellular_virus_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_extracellular_virus(self) -> float:
+        return float(np.sum(self.extracellular_virus))
+
     P_DAMPS = field(type=np.ndarray)
 
     @P_DAMPS.default
     def _P_DAMPS_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_P_DAMPS(self) -> float:
+        return float(np.sum(self.P_DAMPS))
 
     ROS = field(type=np.ndarray)
 
@@ -269,11 +277,21 @@ class AnCockrellModel:
     def _ROS_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_ROS(self) -> float:
+        return float(np.sum(self.ROS))
+
+
     PAF = field(type=np.ndarray)
 
     @PAF.default
     def _PAF_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_PAF(self) -> float:
+        return float(np.sum(self.PAF))
+
 
     TNF = field(type=np.ndarray)
 
@@ -281,11 +299,19 @@ class AnCockrellModel:
     def _TNF_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_TNF(self) -> float:
+        return float(np.sum(self.TNF))
+
     IL1 = field(type=np.ndarray)
 
     @IL1.default
     def _IL1_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_IL1(self) -> float:
+        return float(np.sum(self.IL1))
 
     IL6 = field(type=np.ndarray)
 
@@ -293,11 +319,19 @@ class AnCockrellModel:
     def _IL6_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_IL6(self) -> float:
+        return float(np.sum(self.IL6))
+
     IL8 = field(type=np.ndarray)
 
     @IL8.default
     def _IL8_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_IL8(self) -> float:
+        return float(np.sum(self.IL8))
 
     IL10 = field(type=np.ndarray)
 
@@ -305,11 +339,19 @@ class AnCockrellModel:
     def _IL10_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_IL10(self) -> float:
+        return float(np.sum(self.IL10))
+
     IL12 = field(type=np.ndarray)
 
     @IL12.default
     def _IL12_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_IL12(self) -> float:
+        return float(np.sum(self.IL12))
 
     IL18 = field(type=np.ndarray)
 
@@ -317,17 +359,29 @@ class AnCockrellModel:
     def _IL18_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_IL18(self) -> float:
+        return float(np.sum(self.IL18))
+
     IFNg = field(type=np.ndarray)
 
     @IFNg.default
     def _IFNg_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_IFNg(self) -> float:
+        return float(np.sum(self.IFNg))
+
     T1IFN = field(type=np.ndarray)
 
     @T1IFN.default
     def _T1IFN_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_T1IFN(self) -> float:
+        return float(np.sum(self.T1IFN))
 
     ######################################################################
 
@@ -517,51 +571,7 @@ class AnCockrellModel:
         return self.GRID_HEIGHT, self.GRID_WIDTH
 
     ######################################################################
-    # non-static properties
-
-    @property
-    def total_P_DAMPS(self) -> float:
-        return float(np.sum(self.P_DAMPS))
-
-    @property
-    def total_T1IFN(self) -> float:
-        return float(np.sum(self.T1IFN))
-
-    @property
-    def total_TNF(self) -> float:
-        return float(np.sum(self.TNF))
-
-    @property
-    def total_IFNg(self) -> float:
-        return float(np.sum(self.IFNg))
-
-    @property
-    def total_IL6(self) -> float:
-        return float(np.sum(self.IL6))
-
-    @property
-    def total_IL1(self) -> float:
-        return float(np.sum(self.IL1))
-
-    @property
-    def total_IL8(self) -> float:
-        return float(np.sum(self.IL8))
-
-    @property
-    def total_IL10(self) -> float:
-        return float(np.sum(self.IL10))
-
-    @property
-    def total_IL12(self) -> float:
-        return float(np.sum(self.IL12))
-
-    @property
-    def total_IL18(self) -> float:
-        return float(np.sum(self.IL18))
-
-    @property
-    def total_extracellular_virus(self) -> float:
-        return float(np.sum(self.extracellular_virus))
+    # computed properties
 
     @property
     def total_intracellular_virus(self) -> float:
