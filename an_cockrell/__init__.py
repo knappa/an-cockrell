@@ -281,7 +281,6 @@ class AnCockrellModel:
     def total_ROS(self) -> float:
         return float(np.sum(self.ROS))
 
-
     PAF = field(type=np.ndarray)
 
     @PAF.default
@@ -291,7 +290,6 @@ class AnCockrellModel:
     @property
     def total_PAF(self) -> float:
         return float(np.sum(self.PAF))
-
 
     TNF = field(type=np.ndarray)
 
