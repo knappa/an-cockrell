@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from enum import IntEnum
 from typing import List, Optional, Tuple, Union
 
@@ -881,7 +882,7 @@ class AnCockrellModel:
         #         set color blue
         #         set intracellular-virus 0
         #         set resistance-to-infection 75 ;; arbitrary, maybe make slider
-        #         set cell-membrane 975 + random 51 ;; this is what is consumed by viral excytosis, includes some
+        #         set cell-membrane 975 + random 51 ;; this is what is consumed by viral exocytosis, includes some
         #                                              random component so all cells don't die at the same time
         #         set apoptosis-counter 0
         #         set apoptosis-threshold 475 + random 51 ;; this is half the cell-membrane, which means total amount of
@@ -1195,7 +1196,8 @@ class AnCockrellModel:
         #   ;; =2 => Exp 5
         #   ifelse macro-phago-counter >= macro-phago-limit ;; this will eventually be pyroptosis
         #     [set size 2]
-        over_limit_mask = self.macro_mask & (self.macro_phago_counter >= self.macro_phago_limit)
+
+        # over_limit_mask = self.macro_mask & (self.macro_phago_counter >= self.macro_phago_limit) # NOTE unused
         # self.macro_swollen[over_limit_mask] = True # NOTE unused
 
         #     [;; PHAGOCYTOSIS
@@ -1260,7 +1262,7 @@ class AnCockrellModel:
         #                                  macro-activation-level to Inflammasome variable?
         #                               ;; increased from 1.1 to 5 for V1.1
         #  [;; Proinflammatory cytokine production
-        #   if IL1 + P/DAMPS > 0 ;; these are downstream products of NFkB, which either requires infammasome activation
+        #   if IL1 + P/DAMPS > 0 ;; these are downstream products of NFkB, which either requires inflammasome activation
         #                           or TLR signaling
         #     [set TNF TNF + 1
         #      set IL6 IL6 + 0.4 ;; split with DCs and infected-epis, dependent on IL1
@@ -1294,7 +1296,7 @@ class AnCockrellModel:
 
         # if macro-activation-level < -5 ;; this keeps macros from self activating wrt IL10 in perpetuity
         #   [set color pink ;; tracker
-        #   ;; Antiinflammatory cytokine production
+        #   ;; Anti inflammatory cytokine production
         #   set IL10 IL10 + 0.5
         #
         #   set macro-activation-level macro-activation-level + 5 ;; this is to simulate macrophages returning to
@@ -1798,19 +1800,21 @@ class AnCockrellModel:
         *,
         number: int = 1,
         loc: Optional[Union[Tuple[int, int], Tuple[float, float]]] = None,
+        theta: Optional[Union[float, Iterable[float]]] = None,
     ):
         """
         Create one or more NKs
         :param number: number of NKs to create (optional)
-        :param loc: location at which to create the NKs (optional)
+        :param loc: location at which to create the NKs (optional, random if omitted)
+        :param theta: direction of NK movement in radians (optional, random if omitted)
         :return:
         """
         number = min(number, self.GRID_WIDTH * self.GRID_HEIGHT - self.num_nks)
         if number == 0:
             return
         elif number > 1:
-            for _ in range(number):
-                self.create_nk(loc=loc)
+            for idx in range(number):
+                self.create_nk(loc=loc, theta=theta)
         elif number == 1:
             if self.nk_pointer >= self.MAX_NKS:
                 self._compact_nk_arrays()
@@ -1826,7 +1830,10 @@ class AnCockrellModel:
             else:
                 self.nk_locations[self.nk_pointer, :] = loc
 
-            self.nk_dirs[self.nk_pointer] = 2 * np.pi * np.random.rand() - np.pi
+            if theta is None:
+                self.nk_dirs[self.nk_pointer] = 2 * np.pi * np.random.rand() - np.pi
+            else:
+                self.nk_dirs[self.nk_pointer] = ((theta + np.pi) % (2 * np.pi)) - np.pi
             # self.nk_age[self.nk_pointer] = 0 unused
             self.nk_mask[self.nk_pointer] = True
             self.num_nks += 1
@@ -1876,7 +1883,8 @@ class AnCockrellModel:
     def create_macro(
         self,
         *,
-        loc=None,
+        loc: Optional[Tuple[int, int], np.ndarray] = None,
+        theta: Optional[float] = None,
         pre_il1,
         pre_il18,
         inflammasome_primed,
@@ -1890,6 +1898,7 @@ class AnCockrellModel:
         Create a macrophage.
 
         :param loc: position to create macrophage at (optional, random if omitted)
+        :param theta: direction of macrophage movement in radians (optional, random if omitted)
         :param pre_il1:
         :param pre_il18:
         :param inflammasome_primed:
@@ -1919,7 +1928,10 @@ class AnCockrellModel:
         else:
             self.macro_locations[self.macro_pointer, :] = loc
 
-        self.macro_dirs[self.macro_pointer] = 2 * np.pi * np.random.rand() - np.pi
+        if theta is None:
+            self.macro_dirs[self.macro_pointer] = 2 * np.pi * np.random.rand() - np.pi
+        else:
+            self.macro_dirs[self.macro_pointer] = ((theta + np.pi) % 2 * np.pi) - np.pi
 
         # self.macro_internal_virus[self.macro_pointer] = 0 NOTE: unused
         # self.macro_infected[self.macro_pointer] = False
@@ -1962,10 +1974,11 @@ class AnCockrellModel:
         self.macro_mask[self.num_macros :] = False
         self.macro_pointer = self.num_macros
 
-    def create_dc(self, *, loc=None):
+    def create_dc(self, *, loc=None, theta=None):
         """
         Create a DC
         :param loc: location to create the DC (optional, random if omitted)
+        :param theta: direction of DC movement in radians (optional, random if omitted)
         :return:
         """
         if self.num_dcs >= self.GRID_WIDTH * self.GRID_HEIGHT:
@@ -1985,7 +1998,10 @@ class AnCockrellModel:
         else:
             self.dc_locations[self.dc_pointer, :] = loc
 
-        self.dc_dirs[self.dc_pointer] = 2 * np.pi * np.random.rand() - np.pi
+        if theta is None:
+            self.dc_dirs[self.dc_pointer] = 2 * np.pi * np.random.rand() - np.pi
+        else:
+            self.dc_dirs[self.dc_pointer] = theta
         self.dc_mask[self.dc_pointer] = True
         self.num_dcs += 1
         self.dc_pointer += 1
@@ -2000,7 +2016,8 @@ class AnCockrellModel:
     def create_pmn(
         self,
         *,
-        location: Optional[Union[np.ndarray, List, Tuple]],
+        location: Optional[Union[np.ndarray, List, Tuple]] = None,
+        theta: Optional[float] = None,
         age: int,
         jump_dist: Union[int, float],
     ):
@@ -2008,6 +2025,7 @@ class AnCockrellModel:
         Create a PMN.
 
         :param location: location to create the PMN (optional, random if omitted)
+        :param theta: direction of PMN movement in radians (optional, random if omitted)
         :param age:
         :param jump_dist:
         :return:
@@ -2027,8 +2045,12 @@ class AnCockrellModel:
         else:
             self.pmn_locations[self.pmn_pointer, :] = np.array(location).astype(np.float64)
 
-        theta = 2 * np.pi * np.random.rand() - np.pi
+        if theta is None:
+            theta = 2 * np.pi * np.random.rand() - np.pi
+        else:
+            theta = ((theta + np.pi) % (2 * np.pi)) - np.pi
         self.pmn_dirs[self.pmn_pointer] = theta
+
         self.pmn_locations[self.pmn_pointer] = np.mod(
             self.pmn_locations[self.pmn_pointer]
             + jump_dist * np.array([np.cos(theta), np.sin(theta)]),
