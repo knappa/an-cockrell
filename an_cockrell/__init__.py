@@ -1883,7 +1883,7 @@ class AnCockrellModel:
     def create_macro(
         self,
         *,
-        loc: Optional[Tuple[int, int], np.ndarray] = None,
+        loc: Optional[Union[Tuple[int, int], np.ndarray]] = None,
         theta: Optional[float] = None,
         pre_il1,
         pre_il18,
