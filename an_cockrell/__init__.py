@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from enum import IntEnum
 from typing import List, Optional, Tuple, Union
 
@@ -9,6 +10,7 @@ from attr import define, field
 from matplotlib import markers
 
 BIG_NUM = 3000
+MEDIUM_NUM = 200
 VERBOSE = False
 
 
@@ -18,6 +20,12 @@ class EpiType(IntEnum):
     Infected = 2
     Dead = 3  # TODO: is this necrosis? better name?
     Apoptosed = 4
+
+
+class EndoType(IntEnum):
+    Normal = 0
+    Activated = 1
+    Dead = 2
 
 
 def epitype_one_hot_encoding(e: Union[EpiType, np.ndarray], *, dtype=np.float64):
@@ -51,21 +59,15 @@ epithelial_cm = matplotlib.colors.ListedColormap(
 )
 
 
-class EndoType(IntEnum):
-    Normal = 0
-    Activated = 1
-    Dead = 2
-
-
 # noinspection PyPep8Naming
 @define(kw_only=True)
 class AnCockrellModel:
     GRID_WIDTH: int = field()
     GRID_HEIGHT: int = field()
     MAX_PMNS: int = field(default=BIG_NUM)
-    MAX_DCS: int = field(default=BIG_NUM)
-    MAX_MACROPHAGES: int = field(default=BIG_NUM)
-    MAX_NKS: int = field(default=BIG_NUM)
+    MAX_DCS: int = field(default=MEDIUM_NUM)
+    MAX_MACROPHAGES: int = field(default=MEDIUM_NUM)
+    MAX_NKS: int = field(default=MEDIUM_NUM)
     HARD_BOUND: bool = field(default=True)
 
     is_bat: bool = field()
@@ -81,13 +83,11 @@ class AnCockrellModel:
     inflammasome_priming_threshold: float = field(default=1.0)  # 5.0 for bats
 
     viral_carrying_capacity: int = field(default=500)
-    # resistance_to_infection: int = field(default=75)
     susceptibility_to_infection: int = field(default=77)
     human_endo_activation: int = field(default=5)
     bat_endo_activation: int = field(default=10)
     bat_metabolic_byproduct: float = field(default=2.0)
     human_metabolic_byproduct: float = field(default=0.2)
-    resistance_to_infection: int = field(default=75)
     viral_incubation_threshold: int = field(default=60)
 
     # summary and statistical variables
@@ -258,11 +258,19 @@ class AnCockrellModel:
     def _extracellular_virus_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_extracellular_virus(self) -> float:
+        return float(np.sum(self.extracellular_virus))
+
     P_DAMPS = field(type=np.ndarray)
 
     @P_DAMPS.default
     def _P_DAMPS_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_P_DAMPS(self) -> float:
+        return float(np.sum(self.P_DAMPS))
 
     ROS = field(type=np.ndarray)
 
@@ -270,11 +278,19 @@ class AnCockrellModel:
     def _ROS_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_ROS(self) -> float:
+        return float(np.sum(self.ROS))
+
     PAF = field(type=np.ndarray)
 
     @PAF.default
     def _PAF_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_PAF(self) -> float:
+        return float(np.sum(self.PAF))
 
     TNF = field(type=np.ndarray)
 
@@ -282,11 +298,19 @@ class AnCockrellModel:
     def _TNF_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_TNF(self) -> float:
+        return float(np.sum(self.TNF))
+
     IL1 = field(type=np.ndarray)
 
     @IL1.default
     def _IL1_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_IL1(self) -> float:
+        return float(np.sum(self.IL1))
 
     IL6 = field(type=np.ndarray)
 
@@ -294,11 +318,19 @@ class AnCockrellModel:
     def _IL6_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_IL6(self) -> float:
+        return float(np.sum(self.IL6))
+
     IL8 = field(type=np.ndarray)
 
     @IL8.default
     def _IL8_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_IL8(self) -> float:
+        return float(np.sum(self.IL8))
 
     IL10 = field(type=np.ndarray)
 
@@ -306,11 +338,19 @@ class AnCockrellModel:
     def _IL10_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_IL10(self) -> float:
+        return float(np.sum(self.IL10))
+
     IL12 = field(type=np.ndarray)
 
     @IL12.default
     def _IL12_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_IL12(self) -> float:
+        return float(np.sum(self.IL12))
 
     IL18 = field(type=np.ndarray)
 
@@ -318,17 +358,29 @@ class AnCockrellModel:
     def _IL18_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_IL18(self) -> float:
+        return float(np.sum(self.IL18))
+
     IFNg = field(type=np.ndarray)
 
     @IFNg.default
     def _IFNg_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
 
+    @property
+    def total_IFNg(self) -> float:
+        return float(np.sum(self.IFNg))
+
     T1IFN = field(type=np.ndarray)
 
     @T1IFN.default
     def _T1IFN_factory(self):
         return np.zeros(self.geometry, dtype=np.float64)
+
+    @property
+    def total_T1IFN(self) -> float:
+        return float(np.sum(self.T1IFN))
 
     ######################################################################
 
@@ -382,11 +434,12 @@ class AnCockrellModel:
     def _macro_dirs_factory(self):
         return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
 
-    macro_internal_virus = field(type=np.ndarray)
-
-    @macro_internal_virus.default
-    def _macro_internal_virus_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
+    # NOTE: unused
+    # macro_internal_virus = field(type=np.ndarray)
+    #
+    # @macro_internal_virus.default
+    # def _macro_internal_virus_factory(self):
+    #     return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
 
     macro_activation = field(type=np.ndarray)
 
@@ -442,11 +495,12 @@ class AnCockrellModel:
     def _macro_inflammasome_active_factory(self):
         return np.zeros(self.MAX_MACROPHAGES, dtype=bool)
 
-    macro_swollen = field(type=np.ndarray)
-
-    @macro_swollen.default
-    def _macro_swollen_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=bool)
+    # NOTE: unused
+    # macro_swollen = field(type=np.ndarray)
+    #
+    # @macro_swollen.default
+    # def _macro_swollen_factory(self):
+    #     return np.zeros(self.MAX_MACROPHAGES, dtype=bool)
 
     @property
     def macro_phago_counter(self) -> np.ndarray:
@@ -478,11 +532,12 @@ class AnCockrellModel:
     def _nk_dirs_factory(self):
         return np.zeros(self.MAX_NKS, dtype=np.float64)
 
-    nk_age = field(type=np.ndarray)
-
-    @nk_age.default
-    def _nk_age_factory(self):
-        return np.zeros(self.MAX_NKS, dtype=np.int64)
+    # unused
+    # nk_age = field(type=np.ndarray)
+    #
+    # @nk_age.default
+    # def _nk_age_factory(self):
+    #     return np.zeros(self.MAX_NKS, dtype=np.int64)
 
     ######################################################################
 
@@ -515,51 +570,7 @@ class AnCockrellModel:
         return self.GRID_HEIGHT, self.GRID_WIDTH
 
     ######################################################################
-    # non-static properties
-
-    @property
-    def total_P_DAMPS(self) -> float:
-        return float(np.sum(self.P_DAMPS))
-
-    @property
-    def total_T1IFN(self) -> float:
-        return float(np.sum(self.T1IFN))
-
-    @property
-    def total_TNF(self) -> float:
-        return float(np.sum(self.TNF))
-
-    @property
-    def total_IFNg(self) -> float:
-        return float(np.sum(self.IFNg))
-
-    @property
-    def total_IL6(self) -> float:
-        return float(np.sum(self.IL6))
-
-    @property
-    def total_IL1(self) -> float:
-        return float(np.sum(self.IL1))
-
-    @property
-    def total_IL8(self) -> float:
-        return float(np.sum(self.IL8))
-
-    @property
-    def total_IL10(self) -> float:
-        return float(np.sum(self.IL10))
-
-    @property
-    def total_IL12(self) -> float:
-        return float(np.sum(self.IL12))
-
-    @property
-    def total_IL18(self) -> float:
-        return float(np.sum(self.IL18))
-
-    @property
-    def total_extracellular_virus(self) -> float:
-        return float(np.sum(self.extracellular_virus))
+    # computed properties
 
     @property
     def total_intracellular_virus(self) -> float:
@@ -871,7 +882,7 @@ class AnCockrellModel:
         #         set color blue
         #         set intracellular-virus 0
         #         set resistance-to-infection 75 ;; arbitrary, maybe make slider
-        #         set cell-membrane 975 + random 51 ;; this is what is consumed by viral excytosis, includes some
+        #         set cell-membrane 975 + random 51 ;; this is what is consumed by viral exocytosis, includes some
         #                                              random component so all cells don't die at the same time
         #         set apoptosis-counter 0
         #         set apoptosis-threshold 475 + random 51 ;; this is half the cell-membrane, which means total amount of
@@ -975,6 +986,8 @@ class AnCockrellModel:
         self.pmn_dirs += (
             (np.random.rand(self.MAX_PMNS) - np.random.rand(self.MAX_PMNS)) * np.pi / 4.0
         )
+        self.pmn_dirs[np.where(self.pmn_dirs > np.pi)] -= 2 * np.pi
+        self.pmn_dirs[np.where(self.pmn_dirs < -np.pi)] += 2 * np.pi
         directions = np.stack([np.cos(self.pmn_dirs), np.sin(self.pmn_dirs)], axis=1)
         self.pmn_locations += 0.1 * directions
         self.pmn_locations = np.mod(self.pmn_locations, self.geometry)
@@ -1052,6 +1065,8 @@ class AnCockrellModel:
         #   [wiggle
         #   ]
         self.nk_dirs += (np.random.rand(self.MAX_NKS) - np.random.rand(self.MAX_NKS)) * np.pi / 4.0
+        self.nk_dirs[np.where(self.nk_dirs > np.pi)] -= 2 * np.pi
+        self.nk_dirs[np.where(self.nk_dirs < -np.pi)] += 2 * np.pi
         directions = np.stack([np.cos(self.nk_dirs), np.sin(self.nk_dirs)], axis=1)
         self.nk_locations += 0.1 * directions
         self.nk_locations = np.mod(self.nk_locations, self.geometry)
@@ -1165,6 +1180,8 @@ class AnCockrellModel:
             * np.pi
             / 4.0
         )
+        self.macro_dirs[np.where(self.macro_dirs > np.pi)] -= 2 * np.pi
+        self.macro_dirs[np.where(self.macro_dirs < -np.pi)] += 2 * np.pi
         self.macro_locations += 0.1 * np.stack(
             [np.cos(self.macro_dirs), np.sin(self.macro_dirs)], axis=1
         )
@@ -1179,14 +1196,15 @@ class AnCockrellModel:
         #   ;; =2 => Exp 5
         #   ifelse macro-phago-counter >= macro-phago-limit ;; this will eventually be pyroptosis
         #     [set size 2]
-        over_limit_mask = self.macro_mask & (self.macro_phago_counter >= self.macro_phago_limit)
-        self.macro_swollen[over_limit_mask] = True
+
+        # over_limit_mask = self.macro_mask & (self.macro_phago_counter >= self.macro_phago_limit) # NOTE unused
+        # self.macro_swollen[over_limit_mask] = True # NOTE unused
 
         #     [;; PHAGOCYTOSIS
         #     set size 1
 
         under_limit_mask = self.macro_mask & (self.macro_phago_counter < self.macro_phago_limit)
-        self.macro_swollen[under_limit_mask] = False
+        # self.macro_swollen[under_limit_mask] = False # NOTE unused
 
         #     ;; of virus, uses local variable "q" to represent amount of virus eaten (avoid negative values)
         #     if extracellular-virus > 0
@@ -1215,9 +1233,9 @@ class AnCockrellModel:
         )
         self.macro_cells_eaten[macros_at_apoptosed_epi] += 1
         self.apoptosis_eaten_counter += np.sum(macros_at_apoptosed_epi)
-        self.epithelium[
-            tuple(self.macro_locations[macros_at_apoptosed_epi].T.astype(np.int64))
-        ] = EpiType.Empty
+        self.epithelium[tuple(self.macro_locations[macros_at_apoptosed_epi].T.astype(np.int64))] = (
+            EpiType.Empty
+        )
 
         # clear intracellular virus counter
         self.epi_intracellular_virus[
@@ -1244,7 +1262,7 @@ class AnCockrellModel:
         #                                  macro-activation-level to Inflammasome variable?
         #                               ;; increased from 1.1 to 5 for V1.1
         #  [;; Proinflammatory cytokine production
-        #   if IL1 + P/DAMPS > 0 ;; these are downstream products of NFkB, which either requires infammasome activation
+        #   if IL1 + P/DAMPS > 0 ;; these are downstream products of NFkB, which either requires inflammasome activation
         #                           or TLR signaling
         #     [set TNF TNF + 1
         #      set IL6 IL6 + 0.4 ;; split with DCs and infected-epis, dependent on IL1
@@ -1278,7 +1296,7 @@ class AnCockrellModel:
 
         # if macro-activation-level < -5 ;; this keeps macros from self activating wrt IL10 in perpetuity
         #   [set color pink ;; tracker
-        #   ;; Antiinflammatory cytokine production
+        #   ;; Anti inflammatory cytokine production
         #   set IL10 IL10 + 0.5
         #
         #   set macro-activation-level macro-activation-level + 5 ;; this is to simulate macrophages returning to
@@ -1511,6 +1529,8 @@ class AnCockrellModel:
         #    ]
 
         self.dc_dirs += (np.random.rand(self.MAX_DCS) - np.random.rand(self.MAX_DCS)) * np.pi / 4.0
+        self.dc_dirs[np.where(self.dc_dirs > np.pi)] -= 2 * np.pi
+        self.dc_dirs[np.where(self.dc_dirs < -np.pi)] += 2 * np.pi
         self.dc_locations += 0.1 * np.stack([np.cos(self.dc_dirs), np.sin(self.dc_dirs)], axis=1)
         self.dc_locations = np.mod(self.dc_locations, self.geometry)
 
@@ -1780,19 +1800,21 @@ class AnCockrellModel:
         *,
         number: int = 1,
         loc: Optional[Union[Tuple[int, int], Tuple[float, float]]] = None,
+        theta: Optional[Union[float, Iterable[float]]] = None,
     ):
         """
         Create one or more NKs
         :param number: number of NKs to create (optional)
-        :param loc: location at which to create the NKs (optional)
+        :param loc: location at which to create the NKs (optional, random if omitted)
+        :param theta: direction of NK movement in radians (optional, random if omitted)
         :return:
         """
         number = min(number, self.GRID_WIDTH * self.GRID_HEIGHT - self.num_nks)
         if number == 0:
             return
         elif number > 1:
-            for _ in range(number):
-                self.create_nk(loc=loc)
+            for idx in range(number):
+                self.create_nk(loc=loc, theta=theta)
         elif number == 1:
             if self.nk_pointer >= self.MAX_NKS:
                 self._compact_nk_arrays()
@@ -1808,8 +1830,11 @@ class AnCockrellModel:
             else:
                 self.nk_locations[self.nk_pointer, :] = loc
 
-            self.nk_dirs[self.nk_pointer] = 2 * np.pi * np.random.rand()
-            self.nk_age[self.nk_pointer] = 0
+            if theta is None:
+                self.nk_dirs[self.nk_pointer] = 2 * np.pi * np.random.rand() - np.pi
+            else:
+                self.nk_dirs[self.nk_pointer] = ((theta + np.pi) % (2 * np.pi)) - np.pi
+            # self.nk_age[self.nk_pointer] = 0 unused
             self.nk_mask[self.nk_pointer] = True
             self.num_nks += 1
             self.nk_pointer += 1
@@ -1819,7 +1844,7 @@ class AnCockrellModel:
     def _compact_nk_arrays(self):
         self.nk_locations[: self.num_nks] = self.nk_locations[self.nk_mask]
         self.nk_dirs[: self.num_nks] = self.nk_dirs[self.nk_mask]
-        self.nk_age[: self.num_nks] = self.nk_age[self.nk_mask]
+        # self.nk_age[: self.num_nks] = self.nk_age[self.nk_mask] unused
 
         self.nk_mask[: self.num_nks] = True
         self.nk_mask[self.num_nks :] = False
@@ -1841,12 +1866,13 @@ class AnCockrellModel:
             mode="constant",
             constant_values=0.0,
         )
-        self.nk_age = np.pad(
-            self.nk_age,
-            pad_width=np.array((0, old_max_nks)),
-            mode="constant",
-            constant_values=0,
-        )
+        # unused
+        # self.nk_age = np.pad(
+        #     self.nk_age,
+        #     pad_width=np.array((0, old_max_nks)),
+        #     mode="constant",
+        #     constant_values=0,
+        # )
         self.nk_mask = np.pad(
             self.nk_mask,
             pad_width=np.array((0, old_max_nks)),
@@ -1857,7 +1883,8 @@ class AnCockrellModel:
     def create_macro(
         self,
         *,
-        loc=None,
+        loc: Optional[Union[Tuple[int, int], np.ndarray]] = None,
+        theta: Optional[float] = None,
         pre_il1,
         pre_il18,
         inflammasome_primed,
@@ -1871,6 +1898,7 @@ class AnCockrellModel:
         Create a macrophage.
 
         :param loc: position to create macrophage at (optional, random if omitted)
+        :param theta: direction of macrophage movement in radians (optional, random if omitted)
         :param pre_il1:
         :param pre_il18:
         :param inflammasome_primed:
@@ -1900,9 +1928,12 @@ class AnCockrellModel:
         else:
             self.macro_locations[self.macro_pointer, :] = loc
 
-        self.macro_dirs[self.macro_pointer] = 2 * np.pi * np.random.rand()
+        if theta is None:
+            self.macro_dirs[self.macro_pointer] = 2 * np.pi * np.random.rand() - np.pi
+        else:
+            self.macro_dirs[self.macro_pointer] = ((theta + np.pi) % 2 * np.pi) - np.pi
 
-        self.macro_internal_virus[self.macro_pointer] = 0
+        # self.macro_internal_virus[self.macro_pointer] = 0 NOTE: unused
         # self.macro_infected[self.macro_pointer] = False
         self.macro_pre_il1[self.macro_pointer] = pre_il1
         self.macro_pre_il18[self.macro_pointer] = pre_il18
@@ -1912,7 +1943,7 @@ class AnCockrellModel:
         self.macro_pyroptosis_counter[self.macro_pointer] = pyroptosis_counter
         self.macro_virus_eaten[self.macro_pointer] = virus_eaten
         self.macro_cells_eaten[self.macro_pointer] = cells_eaten
-        self.macro_swollen[self.macro_pointer] = False
+        # self.macro_swollen[self.macro_pointer] = False # NOTE unused
 
         self.macro_mask[self.macro_pointer] = True
         self.num_macros += 1
@@ -1921,7 +1952,7 @@ class AnCockrellModel:
     def compact_macro_arrays(self):
         self.macro_locations[: self.num_macros] = self.macro_locations[self.macro_mask]
         self.macro_dirs[: self.num_macros] = self.macro_dirs[self.macro_mask]
-        self.macro_internal_virus[: self.num_macros] = self.macro_internal_virus[self.macro_mask]
+        # self.macro_internal_virus[: self.num_macros] = self.macro_internal_virus[self.macro_mask] NOTE unused
         self.macro_activation[: self.num_macros] = self.macro_activation[self.macro_mask]
         # self.macro_infected[: self.num_macros] = self.macro_infected[self.macro_mask]
         self.macro_cells_eaten[: self.num_macros] = self.macro_cells_eaten[self.macro_mask]
@@ -1937,16 +1968,17 @@ class AnCockrellModel:
         self.macro_inflammasome_active[: self.num_macros] = self.macro_inflammasome_active[
             self.macro_mask
         ]
-        self.macro_swollen[: self.num_macros] = self.macro_swollen[self.macro_mask]
+        # self.macro_swollen[: self.num_macros] = self.macro_swollen[self.macro_mask] # NOTE unused
 
         self.macro_mask[: self.num_macros] = True
         self.macro_mask[self.num_macros :] = False
         self.macro_pointer = self.num_macros
 
-    def create_dc(self, *, loc=None):
+    def create_dc(self, *, loc=None, theta=None):
         """
         Create a DC
         :param loc: location to create the DC (optional, random if omitted)
+        :param theta: direction of DC movement in radians (optional, random if omitted)
         :return:
         """
         if self.num_dcs >= self.GRID_WIDTH * self.GRID_HEIGHT:
@@ -1966,7 +1998,10 @@ class AnCockrellModel:
         else:
             self.dc_locations[self.dc_pointer, :] = loc
 
-        self.dc_dirs[self.dc_pointer] = 2 * np.pi * np.random.rand()
+        if theta is None:
+            self.dc_dirs[self.dc_pointer] = 2 * np.pi * np.random.rand() - np.pi
+        else:
+            self.dc_dirs[self.dc_pointer] = theta
         self.dc_mask[self.dc_pointer] = True
         self.num_dcs += 1
         self.dc_pointer += 1
@@ -1981,7 +2016,8 @@ class AnCockrellModel:
     def create_pmn(
         self,
         *,
-        location: Optional[Union[np.ndarray, List, Tuple]],
+        location: Optional[Union[np.ndarray, List, Tuple]] = None,
+        theta: Optional[float] = None,
         age: int,
         jump_dist: Union[int, float],
     ):
@@ -1989,6 +2025,7 @@ class AnCockrellModel:
         Create a PMN.
 
         :param location: location to create the PMN (optional, random if omitted)
+        :param theta: direction of PMN movement in radians (optional, random if omitted)
         :param age:
         :param jump_dist:
         :return:
@@ -2008,8 +2045,12 @@ class AnCockrellModel:
         else:
             self.pmn_locations[self.pmn_pointer, :] = np.array(location).astype(np.float64)
 
-        theta = 2 * np.pi * np.random.rand()
+        if theta is None:
+            theta = 2 * np.pi * np.random.rand() - np.pi
+        else:
+            theta = ((theta + np.pi) % (2 * np.pi)) - np.pi
         self.pmn_dirs[self.pmn_pointer] = theta
+
         self.pmn_locations[self.pmn_pointer] = np.mod(
             self.pmn_locations[self.pmn_pointer]
             + jump_dist * np.array([np.cos(theta), np.sin(theta)]),
@@ -2204,13 +2245,10 @@ class AnCockrellModel:
             "TNF",
             "IL1",
             "IL18",
-            "IL2",
-            "IL4",
             "IL6",
             "IL8",
             "IL10",
             "IL12",
-            "IL17",
             "IFNg",
             "T1IFN",
         }, "Unknown field!"
@@ -2255,7 +2293,7 @@ class AnCockrellModel:
                     continue
 
                 if isinstance(v, int | float | bool):
-                    grp.create_dataset(k, shape=(), dtype=type(v), data=v)
+                    grp.create_dataset(k, shape=(), dtype=type(v), data=v, compression="gz")
                 else:
                     # numpy array
                     if np.issubdtype(v.dtype, np.object_):
@@ -2268,7 +2306,7 @@ class AnCockrellModel:
                         v = v[self.nk_mask]
                     elif k.startswith("dc"):
                         v = v[self.dc_mask]
-                    grp.create_dataset(k, shape=v.shape, dtype=v.dtype, data=v)
+                    grp.create_dataset(k, shape=v.shape, dtype=v.dtype, data=v, compression="gz")
 
     @classmethod
     def load(cls, filename: str, time: int) -> "AnCockrellModel":
@@ -2299,7 +2337,6 @@ class AnCockrellModel:
                 bat_endo_activation=grp["bat_endo_activation"][()],
                 bat_metabolic_byproduct=grp["bat_metabolic_byproduct"][()],
                 human_metabolic_byproduct=grp["human_metabolic_byproduct"][()],
-                resistance_to_infection=grp["resistance_to_infection"][()],
                 viral_incubation_threshold=grp["viral_incubation_threshold"][()],
                 MAX_PMNS=grp["MAX_PMNS"][()],
                 MAX_DCS=grp["MAX_DCS"][()],
