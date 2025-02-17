@@ -3,10 +3,11 @@
 
 # # An-Cockrell model reimplementation
 
-import h5py
-import numpy as np
 import math
+
+import h5py
 import matplotlib.pyplot as plt
+import numpy as np
 
 with h5py.File("run-statistics.hdf5", "r") as f:
     num_keys = len(f.keys())
@@ -18,8 +19,7 @@ with h5py.File("run-statistics.hdf5", "r") as f:
 
     for idx, key in enumerate(f.keys()):
         print(key)
-        row = idx // num_cols
-        col = idx % num_cols
+        row, col = divmod(idx, num_cols)
 
         data = np.array(f[key])
         mean = np.mean(data, axis=0)

@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-import decimal
-from decimal import Decimal
 
-import an_cockrell
 import h5py
 import numpy as np
-from an_cockrell import EpiType
 from scipy.stats.qmc import LatinHypercube
 from tqdm.auto import trange
 
-decimal.getcontext().rounding = decimal.ROUND_HALF_EVEN
+import an_cockrell
+from an_cockrell import EpiType
 
 # # An-Cockrell model reimplementation
 
@@ -197,6 +194,7 @@ variational_params = [
 ]
 
 param_list = np.full((num_sims, len(variational_params)), -1, dtype=np.float64)
+total_P_DAMPS = np.full((num_sims, num_steps), -1, dtype=np.float64)
 total_T1IFN = np.full((num_sims, num_steps), -1, dtype=np.float64)
 total_TNF = np.full((num_sims, num_steps), -1, dtype=np.float64)
 total_IFNg = np.full((num_sims, num_steps), -1, dtype=np.float64)
@@ -221,6 +219,17 @@ with h5py.File("run-statistics.hdf5", "w") as f:
         dtype=np.float64,
         data=param_list,
         chunks=(100, len(variational_params)),
+        compression="gzip",
+        compression_opts=9,
+        shuffle=True,
+        fletcher32=True,
+    )
+    f.create_dataset(
+        "total_P_DAMPS",
+        (num_sims, num_steps),
+        dtype=np.float64,
+        data=total_P_DAMPS,
+        chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
         shuffle=True,
@@ -414,7 +423,7 @@ for sim_idx in trange(num_sims, desc="simulation"):
     pct_perturbation = sample[sim_idx]
     for pert_idx, param in enumerate(variational_params):
         if isinstance(params[param], int):
-            params[param] = int(round(Decimal(pct_perturbation[pert_idx] * params[param]), 0))
+            params[param] = int(round(float(pct_perturbation[pert_idx] * params[param])))
         else:
             params[param] = float(pct_perturbation[pert_idx] * params[param])
 
@@ -426,6 +435,7 @@ for sim_idx in trange(num_sims, desc="simulation"):
     for step_idx in trange(num_steps):
         model.time_step()
 
+        total_P_DAMPS[sim_idx, step_idx] = model.total_P_DAMPS
         total_T1IFN[sim_idx, step_idx] = model.total_T1IFN
         total_TNF[sim_idx, step_idx] = model.total_TNF
         total_IFNg[sim_idx, step_idx] = model.total_IFNg
@@ -445,6 +455,7 @@ for sim_idx in trange(num_sims, desc="simulation"):
 
     with h5py.File("run-statistics.hdf5", "r+") as f:
         f["param_list"][sim_idx, :] = param_list[sim_idx, :]
+        f["total_P_DAMPS"][sim_idx, :] = total_P_DAMPS[sim_idx, :]
         f["total_T1IFN"][sim_idx, :] = total_T1IFN[sim_idx, :]
         f["total_TNF"][sim_idx, :] = total_TNF[sim_idx, :]
         f["total_IFNg"][sim_idx, :] = total_IFNg[sim_idx, :]
