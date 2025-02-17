@@ -3,6 +3,7 @@
 
 import h5py
 import numpy as np
+from an_cockrell import EpiType
 from scipy.stats.qmc import LatinHypercube
 from tqdm.auto import trange
 
