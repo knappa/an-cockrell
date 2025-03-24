@@ -2293,7 +2293,7 @@ class AnCockrellModel:
                     continue
 
                 if isinstance(v, int | float | bool):
-                    grp.create_dataset(k, shape=(), dtype=type(v), data=v, compression="gz")
+                    grp.create_dataset(k, shape=(), dtype=type(v), data=v)
                 else:
                     # numpy array
                     if np.issubdtype(v.dtype, np.object_):
@@ -2306,7 +2306,7 @@ class AnCockrellModel:
                         v = v[self.nk_mask]
                     elif k.startswith("dc"):
                         v = v[self.dc_mask]
-                    grp.create_dataset(k, shape=v.shape, dtype=v.dtype, data=v, compression="gz")
+                    grp.create_dataset(k, shape=v.shape, dtype=v.dtype, data=v, compression="gzip")
 
     @classmethod
     def load(cls, filename: str, time: int) -> "AnCockrellModel":
