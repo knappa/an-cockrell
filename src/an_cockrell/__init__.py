@@ -3,7 +3,6 @@ from enum import IntEnum
 from typing import List, Optional, Tuple, Union, cast
 
 import h5py
-import matplotlib
 import matplotlib.axes
 import matplotlib.colors
 import matplotlib.pyplot as plt
@@ -382,7 +381,9 @@ class AnCockrellModel:
     )
 
     # NOTE: unused
-    # macro_internal_virus: np.ndarray = field(default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True))
+    # macro_internal_virus: np.ndarray = field(
+    #   default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True)
+    # )
 
     macro_activation: np.ndarray = field(
         default=Factory(
@@ -425,7 +426,9 @@ class AnCockrellModel:
     )
 
     # NOTE: unused
-    # macro_swollen: np.ndarray = field(default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True))
+    # macro_swollen: np.ndarray = field(
+    #   default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True)
+    # )
 
     @property
     def macro_phago_counter(self) -> np.ndarray:
