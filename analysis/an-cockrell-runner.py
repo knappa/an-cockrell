@@ -170,7 +170,7 @@ variational_params = [
     "dc_ifng_secretion",
     "dc_il6_secretion",
     "dc_il6_max_uptake",
-    # # ACK's Executive Judgement: These are physics-like parameters and won't vary between individuals.
+    # # ACK's Executive Judgment: These are physics-like parameters and won't vary between individuals.
     # "human_viral_lower_bound", 0.0
     # "extracellular_virus_diffusion_const",
     # "T1IFN_diffusion_const",

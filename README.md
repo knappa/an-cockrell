@@ -32,8 +32,8 @@ import an_cockrell
 model = an_cockrell.AnCockrellModel(
     GRID_WIDTH=51,
     GRID_HEIGHT=51,
-    is_bat=False,        # True for bat immune parameters
-    init_inoculum=100,   # number of initially infected sites
+    is_bat=False,
+    init_inoculum=100,
     init_dcs=50,
     init_nks=25,
     init_macros=50,
@@ -50,19 +50,7 @@ print(f"System health: {model.system_health:.1f}%")
 print(f"Infected cells: {model.infected_epithelium_count}")
 ```
 
-### Key parameters
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `is_bat` | — | `True` for bat immune parameters, `False` for human |
-| `init_inoculum` | — | Number of sites seeded with extracellular virus at t=0 |
-| `init_dcs` | — | Initial dendritic cell count |
-| `init_nks` | — | Initial NK cell count |
-| `init_macros` | — | Initial macrophage count |
-| `macro_phago_recovery` | 0.5 | Macrophage phagocytosis recovery rate |
-| `macro_phago_limit` | 1000 | Macrophage phagocytosis limit |
-| `inflammasome_activation_threshold` | 10 (bat: 50) | Virus-eaten threshold for inflammasome activation |
-| `inflammasome_priming_threshold` | 1.0 (bat: 5.0) | P/DAMP+TNF threshold for inflammasome priming |
+See [PARAMETERS.md](PARAMETERS.md) for the complete parameter reference.
 
 ## Visualization
 
