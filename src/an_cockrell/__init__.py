@@ -2,12 +2,13 @@ from collections.abc import Iterable
 from enum import IntEnum
 from typing import List, Optional, Tuple, Union, cast
 
+import dill
 import h5py
 import matplotlib.axes
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
-from attr import Factory, define, field
+from attr import Factory, define, field, fields
 from matplotlib import markers
 
 BIG_NUM = 3000
@@ -1818,7 +1819,7 @@ class AnCockrellModel:
         else:
             raise RuntimeError(f"Creating {number} NKs does not mean anything to this function")
 
-    def _compact_nk_arrays(self):
+    def _compact_nk_arrays(self) -> None:
         self.nk_locations[: self.num_nks] = self.nk_locations[self.nk_mask]
         self.nk_dirs[: self.num_nks] = self.nk_dirs[self.nk_mask]
         # self.nk_age[: self.num_nks] = self.nk_age[self.nk_mask] unused
@@ -1827,9 +1828,14 @@ class AnCockrellModel:
         self.nk_mask[self.num_nks :] = False
         self.nk_pointer = self.num_nks
 
-    def _expand_nk_arrays(self):
+    def _expand_nk_arrays(self, new_max_nks: Optional[int] = None) -> None:
         old_max_nks = self.MAX_NKS
-        self.MAX_NKS *= 2
+        if new_max_nks is None:
+            self.MAX_NKS *= 2
+        else:
+            if new_max_nks <= self.MAX_NKS:
+                return
+            self.MAX_NKS = new_max_nks
 
         self.nk_locations = np.pad(
             self.nk_locations,
@@ -1843,13 +1849,6 @@ class AnCockrellModel:
             mode="constant",
             constant_values=0.0,
         )
-        # unused
-        # self.nk_age = np.pad(
-        #     self.nk_age,
-        #     pad_width=np.array((0, old_max_nks)),
-        #     mode="constant",
-        #     constant_values=0,
-        # )
         self.nk_mask = np.pad(
             self.nk_mask,
             pad_width=np.array((0, old_max_nks)),
@@ -1926,7 +1925,7 @@ class AnCockrellModel:
         self.num_macros += 1
         self.macro_pointer += 1
 
-    def compact_macro_arrays(self):
+    def compact_macro_arrays(self) -> None:
         self.macro_locations[: self.num_macros] = self.macro_locations[self.macro_mask]
         self.macro_dirs[: self.num_macros] = self.macro_dirs[self.macro_mask]
         # self.macro_internal_virus[: self.num_macros] = self.macro_internal_virus[self.macro_mask] NOTE unused
@@ -1951,7 +1950,42 @@ class AnCockrellModel:
         self.macro_mask[self.num_macros :] = False
         self.macro_pointer = self.num_macros
 
-    def create_dc(self, *, loc=None, theta=None):
+    def _expand_macro_arrays(self, new_max_macros: Optional[int] = None) -> None:
+        old_max_macros = self.MAX_MACROPHAGES
+        if new_max_macros is None:
+            self.MAX_MACROPHAGES *= 2
+        else:
+            if new_max_macros <= old_max_macros:
+                # we don't compact arrays here
+                return
+            else:
+                self.MAX_MACROPHAGES = new_max_macros
+
+        for f in [
+            f.name
+            for f in fields(self.__class__)
+            if f.metadata["type"] == "agent" and f.name.startswith("macro")
+        ]:
+            agent_field = getattr(self, f)
+            geom = agent_field.shape
+            if len(geom) == 2:
+                pad_width = np.array(((0, old_max_macros), (0, 0)))
+                constant_values = (0, 0)
+            else:
+                pad_width = np.array((old_max_macros, 0))
+                constant_values = 0.0
+            setattr(
+                self,
+                f,
+                np.pad(
+                    agent_field,
+                    pad_width=pad_width,
+                    mode="constant",
+                    constant_values=constant_values,
+                ),
+            )
+
+    def create_dc(self, *, loc=None, theta=None) -> None:
         """
         Create a DC
         :param loc: location to create the DC (optional, random if omitted)
@@ -1983,12 +2017,47 @@ class AnCockrellModel:
         self.num_dcs += 1
         self.dc_pointer += 1
 
-    def compact_dc_arrays(self):
+    def compact_dc_arrays(self) -> None:
         self.dc_locations[: self.num_dcs] = self.dc_locations[self.dc_mask]
         self.dc_dirs[: self.num_dcs] = self.dc_dirs[self.dc_mask]
         self.dc_mask[: self.num_dcs] = True
         self.dc_mask[self.num_dcs :] = False
         self.dc_pointer = self.num_dcs
+
+    def _expand_dc_arrays(self, new_max_dcs: Optional[int] = None) -> None:
+        old_max_macros = self.MAX_DCS
+        if new_max_dcs is None:
+            self.MAX_DCS *= 2
+        else:
+            if new_max_dcs <= old_max_macros:
+                # we don't compact arrays here
+                return
+            else:
+                self.MAX_DCS = new_max_dcs
+
+        for f in [
+            f.name
+            for f in fields(self.__class__)
+            if f.metadata["type"] == "agent" and f.name.startswith("dc")
+        ]:
+            agent_field = getattr(self, f)
+            geom = agent_field.shape
+            if len(geom) == 2:
+                pad_width = np.array(((0, old_max_macros), (0, 0)))
+                constant_values = (0, 0)
+            else:
+                pad_width = np.array((old_max_macros, 0))
+                constant_values = 0.0
+            setattr(
+                self,
+                f,
+                np.pad(
+                    agent_field,
+                    pad_width=pad_width,
+                    mode="constant",
+                    constant_values=constant_values,
+                ),
+            )
 
     def create_pmn(
         self,
@@ -2040,7 +2109,7 @@ class AnCockrellModel:
         self.num_pmns += 1
         self.pmn_pointer += 1
 
-    def compact_pmn_arrays(self):
+    def compact_pmn_arrays(self) -> None:
         self.pmn_locations[: self.num_pmns] = self.pmn_locations[self.pmn_mask]
         self.pmn_dirs[: self.num_pmns] = self.pmn_dirs[self.pmn_mask]
         self.pmn_age[: self.num_pmns] = self.pmn_age[self.pmn_mask]
@@ -2049,9 +2118,16 @@ class AnCockrellModel:
         self.pmn_mask[self.num_pmns :] = False
         self.pmn_pointer = self.num_pmns
 
-    def _expand_pmn_arrays(self):
+    def _expand_pmn_arrays(self, new_max_pmns: Optional[int] = None) -> None:
         old_max_pmns = self.MAX_PMNS
-        self.MAX_PMNS *= 2
+        if new_max_pmns is None:
+            self.MAX_PMNS *= 2
+        else:
+            if new_max_pmns <= old_max_pmns:
+                # we don't compact arrays here
+                return
+            else:
+                self.MAX_PMNS = new_max_pmns
 
         self.pmn_locations = np.pad(
             self.pmn_locations,
@@ -2238,6 +2314,9 @@ class AnCockrellModel:
             extent=(0.0, field_array.shape[0], 0.0, field_array.shape[1]),
         )
 
+    ######################################################################
+    # saving and loading the model state
+
     def save(self, filename: str, *, write_mode: str = "a"):
         """
         Record the model state to an HDF5 file.
@@ -2245,45 +2324,89 @@ class AnCockrellModel:
         :param write_mode: e.g. append, write
         :return:
         """
-        # compute which class attributes should be saved
-        rep = {attr: getattr(self, attr) for attr in dir(self) if attr[0] != "_"}
-        rep = {k: v for k, v in rep.items() if isinstance(v, int | float | bool | np.ndarray)}
 
-        with h5py.File(filename, write_mode) as f:
-            grp: h5py.Group = f.create_group(str(self.time))
-            for k, v in rep.items():
+        with h5py.File(filename, write_mode) as h5file:
+            grp: h5py.Group = h5file.create_group(str(self.time))
+            for class_field in fields(type(self)):
                 # skip things that can be automatically reconstructed
-                if k in {
-                    "num_macros",
-                    "macro_pointer",
-                    "macro_mask",
-                    "num_pmns",
-                    "pmn_pointer",
-                    "pmn_mask",
-                    "num_nks",
-                    "nk_pointer",
-                    "nk_mask",
-                    "num_dcs",
-                    "dc_pointer",
-                    "dc_mask",
-                }:
+                if self.field_is_bookkeeping(class_field):
                     continue
 
-                if isinstance(v, int | float | bool):
-                    grp.create_dataset(k, shape=(), dtype=type(v), data=v, compression="gz")
+                field_value = getattr(self, class_field.name)
+
+                if self.field_is_control(class_field):
+                    ds = grp.create_dataset(class_field.name, data=np.void(dill.dumps(field_value)))
+                    ds.attrs["type"] = class_field.metadata["type"]
+                    ds_val = grp.create_dataset(
+                        class_field.name + "_value", shape=(), data=field_value(self.time - 1)
+                    )
+                    ds_val.attrs["type"] = class_field.metadata["type"] + "_value"
+                elif np.isscalar(field_value):
+                    # scalars can be directly saved
+                    ds = grp.create_dataset(
+                        class_field.name, shape=(), dtype=type(field_value), data=field_value
+                    )
+                    ds.attrs["type"] = class_field.metadata["type"]
                 else:
-                    # numpy array
-                    if np.issubdtype(v.dtype, np.object_):
-                        v = v.astype(int)
-                    if k.startswith("macro"):
-                        v = v[self.macro_mask]
-                    elif k.startswith("pmn"):
-                        v = v[self.pmn_mask]
-                    elif k.startswith("nk"):
-                        v = v[self.nk_mask]
-                    elif k.startswith("dc"):
-                        v = v[self.dc_mask]
-                    grp.create_dataset(k, shape=v.shape, dtype=v.dtype, data=v, compression="gz")
+                    # numpy arrays for non-grid agents need a bit of filtering first
+                    # filter agent arrays to just the meaningful entries
+                    if self.field_is_agent(class_field):
+                        for cell_type in ["pmn", "macro", "nk", "dc"]:
+                            if class_field.name.startswith(cell_type):
+                                field_value = field_value[getattr(self, f"{cell_type}_mask")]
+                                break
+                    # convert any enum types to ints
+                    if np.issubdtype(field_value.dtype, np.object_):
+                        field_value = field_value.astype(int)
+                    # no need for float64's, float32's are plenty
+                    if np.issubdtype(field_value.dtype, np.floating):
+                        field_value = field_value.astype(np.float32)
+
+                    ds = grp.create_dataset(
+                        class_field.name,
+                        shape=field_value.shape,
+                        dtype=field_value.dtype,
+                        data=field_value,
+                        compression="gzip",
+                        compression_opts=9,
+                    )
+                    ds.attrs["type"] = class_field.metadata["type"]
+                    if self.field_is_molecule(class_field) or self.field_is_grid_agent(class_field):
+                        ds.dims[0].label = "x"
+                        ds.dims[1].label = "y"
+                    elif self.field_is_agent(class_field):
+                        ds.dims[0].label = "cell_idx"
+                        if class_field.name.endswith("_locations"):
+                            ds.dims[1].label = "xy"
+
+            # also save computed properties.
+            # These won't be reloaded, but it's nice to have them in the hdf5
+            field_names = [f.name for f in fields(self.__class__)]
+            computed_properties = [
+                cp_name
+                for cp_name in dir(self)
+                if not cp_name.startswith("_")
+                and cp_name not in field_names
+                and (
+                    np.isscalar(getattr(self, cp_name))
+                    or isinstance(getattr(self, cp_name), np.ndarray)
+                )
+                and not isinstance(getattr(self, cp_name), str)
+            ]
+            for cp_name in computed_properties:
+                field_value = getattr(self, cp_name)
+                if np.isscalar(field_value):
+                    ds = grp.create_dataset(
+                        cp_name, shape=(), dtype=type(field_value), data=field_value
+                    )
+                else:
+                    # no need for float64's
+                    if np.issubdtype(field_value.dtype, np.floating):
+                        field_value = field_value.astype(np.float32)
+                    ds = grp.create_dataset(
+                        cp_name, shape=field_value.shape, dtype=field_value.dtype, data=field_value
+                    )
+                ds.attrs["type"] = "computed_property"
 
     @classmethod
     def load(cls, filename: str, time: int) -> "AnCockrellModel":
@@ -2293,104 +2416,117 @@ class AnCockrellModel:
         :param time: which time slice to load from
         :return:
         """
-        with h5py.File(filename, "r+") as f:
-            grp = cast(h5py.Group, f[str(time)])
 
-            def scalar(key: str):
-                return cast(h5py.Dataset, grp[key])[()]
+        cell_types = ["pmn", "macro", "nk", "dc"]
 
-            # TODO: add new params
+        cell_fields = [f.name for f in fields(cls) if cls.field_is_agent(f)]
+        # parameters, molecular fields, grid-agents, etc.
+        non_cell_init_fields = [
+            f.name
+            for f in fields(cls)
+            if cls.field_is_parameter(f)
+            or cls.field_is_init_parameter(f)
+            or cls.field_is_molecule(f)
+            or cls.field_is_grid_agent(f)
+        ]
+        # measurements
+        measurement_fields = [f.name for f in fields(cls) if cls.field_is_measurement(f)]
+        # controls
+        control_fields = [f.name for f in fields(cls) if cls.field_is_control(f)]
+
+        with h5py.File(filename, "r") as h5file:
+            grp: h5py.Group = h5file[str(time)]
+
+            controls = {f: dill.loads(grp[f][()]) for f in control_fields}
+            init_fields = {f: cls.fix_scalar_type(grp[f][()]) for f in non_cell_init_fields}
+
+            # parameters, molecular fields, and grid-agents are loaded via init
+            # as are the controls
             model = cls(
-                GRID_WIDTH=int(scalar("GRID_WIDTH")),
-                GRID_HEIGHT=int(scalar("GRID_HEIGHT")),
-                is_bat=bool(scalar("is_bat")),
-                init_inoculum=int(scalar("init_inoculum")),
-                init_dcs=int(scalar("init_dcs")),
-                init_nks=int(scalar("init_nks")),
-                init_macros=int(scalar("init_macros")),
-                macro_phago_recovery=float(scalar("macro_phago_recovery")),
-                macro_phago_limit=int(scalar("macro_phago_limit")),
-                inflammasome_activation_threshold=int(scalar("inflammasome_activation_threshold")),
-                inflammasome_priming_threshold=float(scalar("inflammasome_priming_threshold")),
-                susceptibility_to_infection=int(scalar("susceptibility_to_infection")),
-                human_endo_activation=int(scalar("human_endo_activation")),
-                bat_endo_activation=int(scalar("bat_endo_activation")),
-                bat_metabolic_byproduct=float(scalar("bat_metabolic_byproduct")),
-                human_metabolic_byproduct=float(scalar("human_metabolic_byproduct")),
-                viral_incubation_threshold=int(scalar("viral_incubation_threshold")),
-                MAX_PMNS=int(scalar("MAX_PMNS")),
-                MAX_DCS=int(scalar("MAX_DCS")),
-                MAX_MACROPHAGES=int(scalar("MAX_MACROPHAGES")),
-                MAX_NKS=int(scalar("MAX_NKS")),
+                **dict(init_fields, **controls),
             )
 
             # scalars not initialized by init
-            model.time = int(scalar("time"))
+            model.time = int(grp["time"][()])
+            for f in measurement_fields:
+                setattr(model, f, cls.fix_scalar_type(grp[f][()]))
 
-            num_macros = -1
-            num_pmns = -1
-            num_nks = -1
-            num_dcs = -1
-            for k in grp.keys():
-                ds = cast(h5py.Dataset, grp[k])
-                if len(ds) == 0:
-                    # skip the scalars, already dealt with
-                    continue
-                elif len(ds) == 1:
-                    # 1d arrays correspond to agent attributes.
-                    # we learn the number of agents out of their dimensions.
-                    model_field = getattr(model, k)
-                    if k.startswith("macro"):
-                        if num_macros == -1:
-                            num_macros = ds.shape[0]
-                        else:
-                            assert num_macros == ds.shape[0], "agent arrays have inconsistent sizes"
-                        model_field[:num_macros] = ds
-                    elif k.startswith("pmn"):
-                        if num_pmns == -1:
-                            num_pmns = ds.shape[0]
-                        else:
-                            assert num_pmns == ds.shape[0], "agent arrays have inconsistent sizes"
-                        model_field[:num_pmns] = ds
-                    elif k.startswith("nk"):
-                        if num_nks == -1:
-                            num_nks = ds.shape[0]
-                        else:
-                            assert num_nks == ds.shape[0], "agent arrays have inconsistent sizes"
-                        model_field[:num_nks] = ds
-                    elif k.startswith("dc"):
-                        if num_dcs == -1:
-                            num_dcs = ds.shape[0]
-                        else:
-                            assert num_dcs == ds.shape[0], "agent arrays have inconsistent sizes"
-                        model_field[:num_dcs] = ds
+            # agents
+            # ensure there is enough space for agents
+            num_cells = {
+                cell_type: grp[f"{cell_type}_locations"].shape[0] for cell_type in cell_types
+            }
+            for cell_type in cell_types:
+                getattr(model, f"_expand_{cell_type}_arrays")(num_cells[cell_type])
+            # load agent properties
+            for f in cell_fields:
+                cell_type = f.split("_")[0]
+                model_field = getattr(model, f)
+                model_field[: num_cells[cell_type]] = grp[f][()]
+            # configure the bookkeeping fields
+            for cell_type in cell_types:
+                setattr(model, f"num_{cell_type}s", num_cells[cell_type])
+                setattr(model, f"{cell_type}_pointer", num_cells[cell_type])
+                cell_mask = getattr(model, f"{cell_type}_mask")
+                cell_mask[: num_cells[cell_type]] = True
+                cell_mask[num_cells[cell_type] :] = False
 
-                elif len(ds) == 2:
-                    # 2d arrays are spatial fields
-                    model_field = getattr(model, k)
-                    model_field[:, :] = ds
-                else:
-                    raise RuntimeError(f"Unknown/Invalid data {k} in HDF5 file")
+        return model
 
-            # set bookkeeping variables
-            model.num_macros = num_macros
-            model.macro_pointer = num_macros
-            model.macro_mask[:num_macros] = True
-            model.macro_mask[num_macros:] = False
+    @staticmethod
+    def field_is_bookkeeping(f):
+        return (
+            hasattr(f, "metadata") and "type" in f.metadata and f.metadata["type"] == "bookkeeping"
+        )
 
-            model.num_pmns = num_pmns
-            model.pmn_pointer = num_pmns
-            model.pmn_mask[:num_pmns] = True
-            model.pmn_mask[num_pmns:] = False
+    @staticmethod
+    def field_is_agent(f):
+        return hasattr(f, "metadata") and "type" in f.metadata and f.metadata["type"] == "agent"
 
-            model.num_nks = num_nks
-            model.nk_pointer = num_nks
-            model.nk_mask[:num_nks] = True
-            model.nk_mask[num_nks:] = False
+    @staticmethod
+    def field_is_parameter(f):
+        return hasattr(f, "metadata") and "type" in f.metadata and f.metadata["type"] == "parameter"
 
-            model.num_dcs = num_dcs
-            model.dc_pointer = num_dcs
-            model.dc_mask[:num_dcs] = True
-            model.dc_mask[num_dcs:] = False
+    @staticmethod
+    def field_is_init_parameter(f):
+        return (
+            hasattr(f, "metadata")
+            and "type" in f.metadata
+            and f.metadata["type"] == "init_parameter"
+        )
 
-            return model
+    @staticmethod
+    def field_is_molecule(f):
+        return hasattr(f, "metadata") and "type" in f.metadata and f.metadata["type"] == "molecule"
+
+    @staticmethod
+    def field_is_grid_agent(f):
+        return (
+            hasattr(f, "metadata") and "type" in f.metadata and f.metadata["type"] == "grid_agent"
+        )
+
+    @staticmethod
+    def field_is_measurement(f):
+        return (
+            hasattr(f, "metadata") and "type" in f.metadata and f.metadata["type"] == "measurement"
+        )
+
+    @staticmethod
+    def field_is_control(f):
+        return hasattr(f, "metadata") and "type" in f.metadata and f.metadata["type"] == "control"
+
+    @staticmethod
+    def fix_scalar_type(f):
+        if isinstance(f, np.ndarray):
+            if np.issubdtype(f.dtype, np.floating):
+                return f.astype(np.float32)
+            elif np.issubdtype(f.dtype, np.integer):
+                return f.astype(np.int64)
+            else:
+                return f
+        elif np.issubdtype(f, np.floating):
+            return float(f)
+        elif np.issubdtype(f, np.integer):
+            return int(f)
+        else:
+            return f
