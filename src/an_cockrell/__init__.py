@@ -63,128 +63,145 @@ epithelial_cm = matplotlib.colors.ListedColormap(
 # noinspection PyPep8Naming
 @define(kw_only=True)
 class AnCockrellModel:
-    GRID_WIDTH: int = field()
-    GRID_HEIGHT: int = field()
-    MAX_PMNS: int = field(default=BIG_NUM)
-    MAX_DCS: int = field(default=MEDIUM_NUM)
-    MAX_MACROPHAGES: int = field(default=MEDIUM_NUM)
-    MAX_NKS: int = field(default=MEDIUM_NUM)
-    HARD_BOUND: bool = field(default=True)
+    GRID_WIDTH: int = field(metadata={"type": "init_parameter"})
+    GRID_HEIGHT: int = field(metadata={"type": "init_parameter"})
+    MAX_PMNS: int = field(default=BIG_NUM, metadata={"type": "bookkeeping"})
+    MAX_DCS: int = field(default=MEDIUM_NUM, metadata={"type": "bookkeeping"})
+    MAX_MACROPHAGES: int = field(default=MEDIUM_NUM, metadata={"type": "bookkeeping"})
+    MAX_NKS: int = field(default=MEDIUM_NUM, metadata={"type": "bookkeeping"})
+    HARD_BOUND: bool = field(default=True, metadata={"type": "bookkeeping"})
 
-    is_bat: bool = field()
-    init_inoculum: int = field()
-    init_dcs: int = field()
-    init_nks: int = field()
-    init_macros: int = field()
+    is_bat: bool = field(metadata={"type": "parameter"})
+    init_inoculum: int = field(metadata={"type": "init_parameter"})
+    init_dcs: int = field(metadata={"type": "init_parameter"})
+    init_nks: int = field(metadata={"type": "init_parameter"})
+    init_macros: int = field(metadata={"type": "init_parameter"})
 
-    macro_phago_recovery: float = field(default=0.5)
-    macro_phago_limit: int = field(default=1_000)
+    macro_phago_recovery: float = field(default=0.5, metadata={"type": "parameter"})
+    macro_phago_limit: int = field(default=1_000, metadata={"type": "parameter"})
 
-    inflammasome_activation_threshold: int = field(default=10)  # 50 for bats
-    inflammasome_priming_threshold: float = field(default=1.0)  # 5.0 for bats
+    inflammasome_activation_threshold: int = field(
+        default=10, metadata={"type": "parameter"}
+    )  # 50 for bats
+    inflammasome_priming_threshold: float = field(
+        default=1.0, metadata={"type": "parameter"}
+    )  # 5.0 for bats
 
-    viral_carrying_capacity: int = field(default=500)
-    susceptibility_to_infection: int = field(default=77)
-    human_endo_activation: int = field(default=5)
-    bat_endo_activation: int = field(default=10)
-    bat_metabolic_byproduct: float = field(default=2.0)
-    human_metabolic_byproduct: float = field(default=0.2)
-    viral_incubation_threshold: int = field(default=60)
+    susceptibility_to_infection: int = field(default=77, metadata={"type": "parameter"})
+    human_endo_activation: int = field(default=5, metadata={"type": "parameter"})
+    bat_endo_activation: int = field(default=10, metadata={"type": "parameter"})
+    bat_metabolic_byproduct: float = field(default=2.0, metadata={"type": "parameter"})
+    human_metabolic_byproduct: float = field(default=0.2, metadata={"type": "parameter"})
+    viral_incubation_threshold: int = field(default=60, metadata={"type": "parameter"})
 
     # summary and statistical variables
-    time: int = field(init=False, factory=lambda: 0)
-    apoptosis_eaten_counter: int = field(default=0, init=False)
-    pyroptosed_macros: int = field(init=False, factory=lambda: 0)
+    time: int = field(init=False, factory=lambda: 0, metadata={"type": "measurement"})
+    apoptosis_eaten_counter: int = field(default=0, init=False, metadata={"type": "measurement"})
+    pyroptosed_macros: int = field(init=False, factory=lambda: 0, metadata={"type": "measurement"})
 
     ######################################################################
     # originally unnamed parameters
 
     # TODO: when regrowth happens, the spread is different (475-526), is this intentional?
-    epi_apoptosis_threshold_lower: int = field(default=450)
-    epi_apoptosis_threshold_range: int = field(default=100)
-    epi_apoptosis_threshold_lower_regrow: int = field(default=475)
-    epi_apoptosis_threshold_range_regrow: int = field(default=51)
-    epi_regrowth_counter_threshold: int = field(default=432)
-    epi_cell_membrane_init_lower: int = field(default=975)
-    epi_cell_membrane_init_range: int = field(default=51)
-    infected_epithelium_ros_damage_counter_threshold: int = field(default=10)
-    epithelium_ros_damage_counter_threshold: int = field(default=2)
-    epithelium_pdamps_secretion_on_death: float = field(default=10.0)
-    dead_epithelium_pdamps_burst_secretion: float = field(default=10.0)
-    dead_epithelium_pdamps_secretion: float = field(default=1.0)
-    epi_max_tnf_uptake: float = field(default=0.1)
-    epi_max_il1_uptake: float = field(default=0.1)
-    epi_t1ifn_secretion: float = field(default=0.75)
-    epi_t1ifn_secretion_prob: float = field(default=0.01)
-    epi_pdamps_secretion_prob: float = field(default=0.01)
+    epi_apoptosis_threshold_lower: int = field(default=450, metadata={"type": "parameter"})
+    epi_apoptosis_threshold_range: int = field(default=100, metadata={"type": "parameter"})
+    epi_apoptosis_threshold_lower_regrow: int = field(default=475, metadata={"type": "parameter"})
+    epi_apoptosis_threshold_range_regrow: int = field(default=51, metadata={"type": "parameter"})
+    epi_regrowth_counter_threshold: int = field(default=432, metadata={"type": "parameter"})
+    epi_cell_membrane_init_lower: int = field(default=975, metadata={"type": "init_parameter"})
+    epi_cell_membrane_init_range: int = field(default=51, metadata={"type": "init_parameter"})
+    infected_epithelium_ros_damage_counter_threshold: int = field(
+        default=10, metadata={"type": "parameter"}
+    )
+    epithelium_ros_damage_counter_threshold: int = field(default=2, metadata={"type": "parameter"})
+    epithelium_pdamps_secretion_on_death: float = field(
+        default=10.0, metadata={"type": "parameter"}
+    )
+    dead_epithelium_pdamps_burst_secretion: float = field(
+        default=10.0, metadata={"type": "parameter"}
+    )
+    dead_epithelium_pdamps_secretion: float = field(default=1.0, metadata={"type": "parameter"})
+    epi_max_tnf_uptake: float = field(default=0.1, metadata={"type": "parameter"})
+    epi_max_il1_uptake: float = field(default=0.1, metadata={"type": "parameter"})
+    epi_t1ifn_secretion: float = field(default=0.75, metadata={"type": "parameter"})
+    epi_t1ifn_secretion_prob: float = field(default=0.01, metadata={"type": "parameter"})
+    epi_pdamps_secretion_prob: float = field(default=0.01, metadata={"type": "parameter"})
 
-    infected_epi_t1ifn_secretion: float = field(default=1.0)
-    infected_epi_il18_secretion: float = field(default=0.11)
-    infected_epi_il6_secretion: float = field(default=0.10)
+    infected_epi_t1ifn_secretion: float = field(default=1.0, metadata={"type": "parameter"})
+    infected_epi_il18_secretion: float = field(default=0.11, metadata={"type": "parameter"})
+    infected_epi_il6_secretion: float = field(default=0.10, metadata={"type": "parameter"})
 
-    activated_endo_death_threshold: float = field(default=0.5)
-    activated_endo_adhesion_threshold: float = field(default=36)
-    activated_endo_pmn_spawn_prob: float = field(default=0.1)
-    activated_endo_pmn_spawn_dist: float = field(default=5.0)
+    activated_endo_death_threshold: float = field(default=0.5, metadata={"type": "parameter"})
+    activated_endo_adhesion_threshold: float = field(default=36, metadata={"type": "parameter"})
+    activated_endo_pmn_spawn_prob: float = field(default=0.1, metadata={"type": "parameter"})
+    activated_endo_pmn_spawn_dist: float = field(default=5.0, metadata={"type": "parameter"})
 
-    bat_t1ifn_init_amount: float = field(default=5.0)
-    bat_t1ifn_init_prob: float = field(default=0.01)
+    bat_t1ifn_init_amount: float = field(default=5.0, metadata={"type": "init_parameter"})
+    bat_t1ifn_init_prob: float = field(default=0.01, metadata={"type": "init_parameter"})
 
-    extracellular_virus_init_amount_lower: int = field(default=80)
-    extracellular_virus_init_amount_range: int = field(default=40)
+    extracellular_virus_init_amount_lower: int = field(
+        default=80, metadata={"type": "init_parameter"}
+    )
+    extracellular_virus_init_amount_range: int = field(
+        default=40, metadata={"type": "init_parameter"}
+    )
 
-    bat_viral_lower_bound: float = field(default=1.0)
-    human_viral_lower_bound: float = field(default=0.0)
+    bat_viral_lower_bound: float = field(default=1.0, metadata={"type": "parameter"})
+    human_viral_lower_bound: float = field(default=0.0, metadata={"type": "parameter"})
 
-    bat_t1ifn_effect_scale: float = field(default=0.1)
-    human_t1ifn_effect_scale: float = field(default=0.01)
+    bat_t1ifn_effect_scale: float = field(default=0.1, metadata={"type": "parameter"})
+    human_t1ifn_effect_scale: float = field(default=0.01, metadata={"type": "parameter"})
 
-    pmn_max_age: int = field(default=36)
-    pmn_ros_secretion_on_death: float = field(default=10.0)
-    pmn_il1_secretion_on_death: float = field(default=1.0)
+    pmn_max_age: int = field(default=36, metadata={"type": "parameter"})
+    pmn_ros_secretion_on_death: float = field(default=10.0, metadata={"type": "parameter"})
+    pmn_il1_secretion_on_death: float = field(default=1.0, metadata={"type": "parameter"})
 
-    nk_ifng_secretion: float = field(default=1.0)
+    nk_ifng_secretion: float = field(default=1.0, metadata={"type": "parameter"})
 
-    macro_max_virus_uptake: float = field(default=10.0)
-    macro_activation_threshold: float = field(default=5.0)
-    activated_macro_il8_secretion: float = field(default=1.0)
-    activated_macro_il12_secretion: float = field(default=0.5)
-    activated_macro_tnf_secretion: float = field(default=1.0)
-    activated_macro_il6_secretion: float = field(default=0.4)
-    activated_macro_il10_secretion: float = field(default=1.0)
-    macro_antiactivation_threshold: float = field(default=5.0)
-    antiactivated_macro_il10_secretion: float = field(default=0.5)
-    inflammasome_il1_secretion: float = field(default=1.0)
-    inflammasome_macro_pre_il1_secretion: float = field(default=5.0)
-    inflammasome_il18_secretion: float = field(default=1.0)
-    inflammasome_macro_pre_il18_secretion: float = field(default=0.5)
-    pyroptosis_macro_pdamps_secretion: float = field(default=10.0)
+    macro_max_virus_uptake: float = field(default=10.0, metadata={"type": "parameter"})
+    macro_activation_threshold: float = field(default=5.0, metadata={"type": "parameter"})
+    activated_macro_il8_secretion: float = field(default=1.0, metadata={"type": "parameter"})
+    activated_macro_il12_secretion: float = field(default=0.5, metadata={"type": "parameter"})
+    activated_macro_tnf_secretion: float = field(default=1.0, metadata={"type": "parameter"})
+    activated_macro_il6_secretion: float = field(default=0.4, metadata={"type": "parameter"})
+    activated_macro_il10_secretion: float = field(default=1.0, metadata={"type": "parameter"})
+    macro_antiactivation_threshold: float = field(default=5.0, metadata={"type": "parameter"})
+    antiactivated_macro_il10_secretion: float = field(default=0.5, metadata={"type": "parameter"})
+    inflammasome_il1_secretion: float = field(default=1.0, metadata={"type": "parameter"})
+    inflammasome_macro_pre_il1_secretion: float = field(default=5.0, metadata={"type": "parameter"})
+    inflammasome_il18_secretion: float = field(default=1.0, metadata={"type": "parameter"})
+    inflammasome_macro_pre_il18_secretion: float = field(
+        default=0.5, metadata={"type": "parameter"}
+    )
+    pyroptosis_macro_pdamps_secretion: float = field(default=10.0, metadata={"type": "parameter"})
 
-    dc_t1ifn_activation_threshold: float = field(default=1.0)
-    dc_il12_secretion: float = field(default=0.5)
-    dc_ifng_secretion: float = field(default=0.5)
-    dc_il6_secretion: float = field(default=0.4)
-    dc_il6_max_uptake: float = field(default=0.1)
+    dc_t1ifn_activation_threshold: float = field(default=1.0, metadata={"type": "parameter"})
+    dc_il12_secretion: float = field(default=0.5, metadata={"type": "parameter"})
+    dc_ifng_secretion: float = field(default=0.5, metadata={"type": "parameter"})
+    dc_il6_secretion: float = field(default=0.4, metadata={"type": "parameter"})
+    dc_il6_max_uptake: float = field(default=0.1, metadata={"type": "parameter"})
 
-    extracellular_virus_diffusion_const: float = field(default=0.05)
-    T1IFN_diffusion_const: float = field(default=0.1)
-    PAF_diffusion_const: float = field(default=0.1)
-    ROS_diffusion_const: float = field(default=0.1)
-    P_DAMPS_diffusion_const: float = field(default=0.1)
-    IFNg_diffusion_const: float = field(default=0.2)
-    TNF_diffusion_const: float = field(default=0.2)
-    IL6_diffusion_const: float = field(default=0.2)
-    IL1_diffusion_const: float = field(default=0.2)
-    IL10_diffusion_const: float = field(default=0.2)
-    IL12_diffusion_const: float = field(default=0.2)
-    IL18_diffusion_const: float = field(default=0.2)
-    IL8_diffusion_const: float = field(default=0.3)
+    extracellular_virus_diffusion_const: float = field(default=0.05, metadata={"type": "parameter"})
+    T1IFN_diffusion_const: float = field(default=0.1, metadata={"type": "parameter"})
+    PAF_diffusion_const: float = field(default=0.1, metadata={"type": "parameter"})
+    ROS_diffusion_const: float = field(default=0.1, metadata={"type": "parameter"})
+    P_DAMPS_diffusion_const: float = field(default=0.1, metadata={"type": "parameter"})
+    IFNg_diffusion_const: float = field(default=0.2, metadata={"type": "parameter"})
+    TNF_diffusion_const: float = field(default=0.2, metadata={"type": "parameter"})
+    IL6_diffusion_const: float = field(default=0.2, metadata={"type": "parameter"})
+    IL1_diffusion_const: float = field(default=0.2, metadata={"type": "parameter"})
+    IL10_diffusion_const: float = field(default=0.2, metadata={"type": "parameter"})
+    IL12_diffusion_const: float = field(default=0.2, metadata={"type": "parameter"})
+    IL18_diffusion_const: float = field(default=0.2, metadata={"type": "parameter"})
+    IL8_diffusion_const: float = field(default=0.3, metadata={"type": "parameter"})
 
-    extracellular_virus_cleanup_threshold: float = field(default=0.05)
-    cleanup_threshold: float = field(default=0.1)
+    extracellular_virus_cleanup_threshold: float = field(
+        default=0.05, metadata={"type": "parameter"}
+    )
+    cleanup_threshold: float = field(default=0.1, metadata={"type": "parameter"})
 
-    evap_const_1: float = field(default=0.99)
-    evap_const_2: float = field(default=0.9)
+    evap_const_1: float = field(default=0.99, metadata={"type": "parameter"})
+    evap_const_2: float = field(default=0.9, metadata={"type": "parameter"})
 
     ######################################################################
     # epithelium
@@ -192,24 +209,30 @@ class AnCockrellModel:
     epithelium: np.ndarray = field(
         default=Factory(
             lambda self: np.full(self.geometry, EpiType.Healthy, dtype=EpiType), takes_self=True
-        )
+        ),
+        metadata={"type": "grid_agent"},
     )
     epithelium_ros_damage_counter: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "grid_agent"},
     )
     epi_regrow_counter: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True),
+        metadata={"type": "grid_agent"},
     )
     epi_apoptosis_counter: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True),
+        metadata={"type": "grid_agent"},
     )
     epi_intracellular_virus: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True),
+        metadata={"type": "grid_agent"},
     )
     epi_cell_membrane: np.ndarray = field(
         default=Factory(
             lambda self: np.random.randint(975, 975 + 51, size=self.geometry), takes_self=True
-        )
+        ),
+        metadata={"type": "grid_agent"},
     )
     epi_apoptosis_threshold: np.ndarray = field(
         default=Factory(
@@ -219,7 +242,8 @@ class AnCockrellModel:
                 size=self.geometry,
             ),
             takes_self=True,
-        )
+        ),
+        metadata={"type": "grid_agent"},
     )
 
     ######################################################################
@@ -228,17 +252,20 @@ class AnCockrellModel:
     endothelial_activation: np.ndarray = field(
         default=Factory(
             lambda self: np.full(self.geometry, EndoType.Normal, dtype=EndoType), takes_self=True
-        )
+        ),
+        metadata={"type": "grid_agent"},
     )
     endothelial_adhesion_counter: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True),
+        metadata={"type": "grid_agent"},
     )
 
     ######################################################################
     # spatial fields
 
     extracellular_virus: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -246,7 +273,8 @@ class AnCockrellModel:
         return float(np.sum(self.extracellular_virus))
 
     P_DAMPS: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -254,7 +282,8 @@ class AnCockrellModel:
         return float(np.sum(self.P_DAMPS))
 
     ROS: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -262,7 +291,8 @@ class AnCockrellModel:
         return float(np.sum(self.ROS))
 
     PAF: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -270,7 +300,8 @@ class AnCockrellModel:
         return float(np.sum(self.PAF))
 
     TNF: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -278,7 +309,8 @@ class AnCockrellModel:
         return float(np.sum(self.TNF))
 
     IL1: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -286,7 +318,8 @@ class AnCockrellModel:
         return float(np.sum(self.IL1))
 
     IL6: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -294,7 +327,8 @@ class AnCockrellModel:
         return float(np.sum(self.IL6))
 
     IL8: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -302,7 +336,8 @@ class AnCockrellModel:
         return float(np.sum(self.IL8))
 
     IL10: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -310,7 +345,8 @@ class AnCockrellModel:
         return float(np.sum(self.IL10))
 
     IL12: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -318,7 +354,8 @@ class AnCockrellModel:
         return float(np.sum(self.IL12))
 
     IL18: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -326,7 +363,8 @@ class AnCockrellModel:
         return float(np.sum(self.IL18))
 
     IFNg: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -334,7 +372,8 @@ class AnCockrellModel:
         return float(np.sum(self.IFNg))
 
     T1IFN: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        metadata={"type": "molecule"},
     )
 
     @property
@@ -343,41 +382,48 @@ class AnCockrellModel:
 
     ######################################################################
 
-    num_pmns: int = field(init=False, factory=lambda: 0)
-    pmn_pointer: int = field(init=False, factory=lambda: 0)
+    num_pmns: int = field(init=False, factory=lambda: 0, metadata={"type": "bookkeeping"})
+    pmn_pointer: int = field(init=False, factory=lambda: 0, metadata={"type": "bookkeeping"})
 
     pmn_mask: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=bool), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=bool), takes_self=True),
+        metadata={"type": "bookkeeping"},
     )
     pmn_locations: np.ndarray = field(
         default=Factory(
             lambda self: np.zeros((self.MAX_PMNS, 2), dtype=np.float64), takes_self=True
-        )
+        ),
+        metadata={"type": "agent"},
     )
     pmn_dirs: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=np.float64), takes_self=True),
+        metadata={"type": "agent"},
     )
     pmn_age: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=np.int64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=np.int64), takes_self=True),
+        metadata={"type": "agent"},
     )
 
     ######################################################################
 
-    num_macros: int = field(init=False, factory=lambda: 0)
-    macro_pointer: int = field(init=False, factory=lambda: 0)
+    num_macros: int = field(init=False, factory=lambda: 0, metadata={"type": "bookkeeping"})
+    macro_pointer: int = field(init=False, factory=lambda: 0, metadata={"type": "bookkeeping"})
 
     macro_mask: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True),
+        metadata={"type": "bookkeeping"},
     )
     macro_locations: np.ndarray = field(
         default=Factory(
             lambda self: np.zeros((self.MAX_MACROPHAGES, 2), dtype=np.float64), takes_self=True
-        )
+        ),
+        metadata={"type": "agent"},
     )
     macro_dirs: np.ndarray = field(
         default=Factory(
             lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
-        )
+        ),
+        metadata={"type": "agent"},
     )
 
     # NOTE: unused
@@ -388,7 +434,8 @@ class AnCockrellModel:
     macro_activation: np.ndarray = field(
         default=Factory(
             lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
-        )
+        ),
+        metadata={"type": "agent"},
     )
 
     # macro_infected: np.ndarray  # unused
@@ -396,33 +443,40 @@ class AnCockrellModel:
     macro_cells_eaten: np.ndarray = field(
         default=Factory(
             lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.int64), takes_self=True
-        )
+        ),
+        metadata={"type": "agent"},
     )
     macro_virus_eaten: np.ndarray = field(
         default=Factory(
             lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
-        )
+        ),
+        metadata={"type": "agent"},
     )
     macro_pre_il1: np.ndarray = field(
         default=Factory(
             lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
-        )
+        ),
+        metadata={"type": "agent"},
     )
     macro_pre_il18: np.ndarray = field(
         default=Factory(
             lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
-        )
+        ),
+        metadata={"type": "agent"},
     )
     macro_pyroptosis_counter: np.ndarray = field(
         default=Factory(
             lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
-        )
+        ),
+        metadata={"type": "agent"},
     )
     macro_inflammasome_primed: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True),
+        metadata={"type": "agent"},
     )
     macro_inflammasome_active: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True),
+        metadata={"type": "agent"},
     )
 
     # NOTE: unused
@@ -439,17 +493,22 @@ class AnCockrellModel:
 
     ######################################################################
 
-    num_nks: int = field(init=False, factory=lambda: 0)
-    nk_pointer: int = field(init=False, factory=lambda: 0)
+    num_nks: int = field(init=False, factory=lambda: 0, metadata={"type": "bookkeeping"})
+    nk_pointer: int = field(init=False, factory=lambda: 0, metadata={"type": "bookkeeping"})
 
     nk_mask: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_NKS, dtype=bool), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.MAX_NKS, dtype=bool), takes_self=True),
+        metadata={"type": "bookkeeping"},
     )
     nk_locations: np.ndarray = field(
-        default=Factory(lambda self: np.zeros((self.MAX_NKS, 2), dtype=np.float64), takes_self=True)
+        default=Factory(
+            lambda self: np.zeros((self.MAX_NKS, 2), dtype=np.float64), takes_self=True
+        ),
+        metadata={"type": "agent"},
     )
     nk_dirs: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_NKS, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.MAX_NKS, dtype=np.float64), takes_self=True),
+        metadata={"type": "agent"},
     )
 
     # unused
@@ -457,17 +516,22 @@ class AnCockrellModel:
 
     ######################################################################
 
-    num_dcs: int = field(init=False, factory=lambda: 0)
-    dc_pointer: int = field(init=False, factory=lambda: 0)
+    num_dcs: int = field(init=False, factory=lambda: 0, metadata={"type": "bookkeeping"})
+    dc_pointer: int = field(init=False, factory=lambda: 0, metadata={"type": "bookkeeping"})
 
     dc_mask: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_DCS, dtype=bool), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.MAX_DCS, dtype=bool), takes_self=True),
+        metadata={"type": "bookkeeping"},
     )
     dc_locations: np.ndarray = field(
-        default=Factory(lambda self: np.zeros((self.MAX_DCS, 2), dtype=np.float64), takes_self=True)
+        default=Factory(
+            lambda self: np.zeros((self.MAX_DCS, 2), dtype=np.float64), takes_self=True
+        ),
+        metadata={"type": "agent"},
     )
     dc_dirs: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_DCS, dtype=np.float64), takes_self=True)
+        default=Factory(lambda self: np.zeros(self.MAX_DCS, dtype=np.float64), takes_self=True),
+        metadata={"type": "agent"},
     )
 
     ######################################################################
@@ -2248,7 +2312,6 @@ class AnCockrellModel:
                 macro_phago_limit=int(scalar("macro_phago_limit")),
                 inflammasome_activation_threshold=int(scalar("inflammasome_activation_threshold")),
                 inflammasome_priming_threshold=float(scalar("inflammasome_priming_threshold")),
-                viral_carrying_capacity=int(scalar("viral_carrying_capacity")),
                 susceptibility_to_infection=int(scalar("susceptibility_to_infection")),
                 human_endo_activation=int(scalar("human_endo_activation")),
                 bat_endo_activation=int(scalar("bat_endo_activation")),
