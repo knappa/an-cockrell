@@ -1,12 +1,14 @@
 from collections.abc import Iterable
 from enum import IntEnum
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, cast
 
 import h5py
 import matplotlib
+import matplotlib.axes
+import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
-from attr import define, field
+from attr import Factory, define, field
 from matplotlib import markers
 
 BIG_NUM = 3000
@@ -91,9 +93,9 @@ class AnCockrellModel:
     viral_incubation_threshold: int = field(default=60)
 
     # summary and statistical variables
-    time = field(init=False, factory=lambda: 0, type=int)
+    time: int = field(init=False, factory=lambda: 0)
     apoptosis_eaten_counter: int = field(default=0, init=False)
-    pyroptosed_macros = field(init=False, factory=lambda: 0, type=int)
+    pyroptosed_macros: int = field(init=False, factory=lambda: 0)
 
     ######################################################################
     # originally unnamed parameters
@@ -188,195 +190,153 @@ class AnCockrellModel:
     ######################################################################
     # epithelium
 
-    epithelium = field(type=np.ndarray)
-
-    @epithelium.default
-    def _epithelium_factory(self):
-        return np.full(self.geometry, EpiType.Healthy, dtype=EpiType)
-
-    epithelium_ros_damage_counter = field(type=np.ndarray)
-
-    @epithelium_ros_damage_counter.default
-    def _epithelium_ros_damage_counter_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
-
-    epi_regrow_counter = field(type=np.ndarray)
-
-    @epi_regrow_counter.default
-    def _epi_regrow_counter_factory(self):
-        return np.zeros(self.geometry, dtype=np.int64)
-
-    epi_apoptosis_counter = field(type=np.ndarray)
-
-    @epi_apoptosis_counter.default
-    def _epi_apoptosis_counter_factory(self):
-        return np.zeros(self.geometry, dtype=np.int64)
-
-    epi_intracellular_virus = field(type=np.ndarray)
-
-    @epi_intracellular_virus.default
-    def _epi_intracellular_virus_factory(self):
-        return np.zeros(self.geometry, dtype=np.int64)
-
-    epi_cell_membrane = field(type=np.ndarray)
-
-    @epi_cell_membrane.default
-    def _epi_cell_membrane_factory(self):
-        return np.random.randint(975, 975 + 51, size=self.geometry)
-
-    epi_apoptosis_threshold = field(type=np.ndarray)
-
-    @epi_apoptosis_threshold.default
-    def _epi_apoptosis_threshold_factory(self):
-        return np.random.randint(
-            self.epi_apoptosis_threshold_lower,
-            self.epi_apoptosis_threshold_lower + self.epi_apoptosis_threshold_range,
-            size=self.geometry,
+    epithelium: np.ndarray = field(
+        default=Factory(
+            lambda self: np.full(self.geometry, EpiType.Healthy, dtype=EpiType), takes_self=True
         )
+    )
+    epithelium_ros_damage_counter: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
+    epi_regrow_counter: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True)
+    )
+    epi_apoptosis_counter: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True)
+    )
+    epi_intracellular_virus: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True)
+    )
+    epi_cell_membrane: np.ndarray = field(
+        default=Factory(
+            lambda self: np.random.randint(975, 975 + 51, size=self.geometry), takes_self=True
+        )
+    )
+    epi_apoptosis_threshold: np.ndarray = field(
+        default=Factory(
+            lambda self: np.random.randint(
+                self.epi_apoptosis_threshold_lower,
+                self.epi_apoptosis_threshold_lower + self.epi_apoptosis_threshold_range,
+                size=self.geometry,
+            ),
+            takes_self=True,
+        )
+    )
 
     ######################################################################
     # endothelium
 
-    endothelial_activation = field(type=np.ndarray)
-
-    @endothelial_activation.default
-    def _endothelial_activation_factory(self):
-        return np.full(self.geometry, EndoType.Normal, dtype=EndoType)
-
-    endothelial_adhesion_counter = field(type=np.ndarray)
-
-    @endothelial_adhesion_counter.default
-    def _endothelial_adhesion_counter_factory(self):
-        return np.zeros(self.geometry, dtype=np.int64)
+    endothelial_activation: np.ndarray = field(
+        default=Factory(
+            lambda self: np.full(self.geometry, EndoType.Normal, dtype=EndoType), takes_self=True
+        )
+    )
+    endothelial_adhesion_counter: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True)
+    )
 
     ######################################################################
     # spatial fields
 
-    extracellular_virus = field(type=np.ndarray)
-
-    @extracellular_virus.default
-    def _extracellular_virus_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    extracellular_virus: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_extracellular_virus(self) -> float:
         return float(np.sum(self.extracellular_virus))
 
-    P_DAMPS = field(type=np.ndarray)
-
-    @P_DAMPS.default
-    def _P_DAMPS_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    P_DAMPS: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_P_DAMPS(self) -> float:
         return float(np.sum(self.P_DAMPS))
 
-    ROS = field(type=np.ndarray)
-
-    @ROS.default
-    def _ROS_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    ROS: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_ROS(self) -> float:
         return float(np.sum(self.ROS))
 
-    PAF = field(type=np.ndarray)
-
-    @PAF.default
-    def _PAF_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    PAF: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_PAF(self) -> float:
         return float(np.sum(self.PAF))
 
-    TNF = field(type=np.ndarray)
-
-    @TNF.default
-    def _TNF_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    TNF: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_TNF(self) -> float:
         return float(np.sum(self.TNF))
 
-    IL1 = field(type=np.ndarray)
-
-    @IL1.default
-    def _IL1_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    IL1: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_IL1(self) -> float:
         return float(np.sum(self.IL1))
 
-    IL6 = field(type=np.ndarray)
-
-    @IL6.default
-    def _IL6_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    IL6: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_IL6(self) -> float:
         return float(np.sum(self.IL6))
 
-    IL8 = field(type=np.ndarray)
-
-    @IL8.default
-    def _IL8_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    IL8: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_IL8(self) -> float:
         return float(np.sum(self.IL8))
 
-    IL10 = field(type=np.ndarray)
-
-    @IL10.default
-    def _IL10_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    IL10: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_IL10(self) -> float:
         return float(np.sum(self.IL10))
 
-    IL12 = field(type=np.ndarray)
-
-    @IL12.default
-    def _IL12_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    IL12: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_IL12(self) -> float:
         return float(np.sum(self.IL12))
 
-    IL18 = field(type=np.ndarray)
-
-    @IL18.default
-    def _IL18_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    IL18: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_IL18(self) -> float:
         return float(np.sum(self.IL18))
 
-    IFNg = field(type=np.ndarray)
-
-    @IFNg.default
-    def _IFNg_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    IFNg: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_IFNg(self) -> float:
         return float(np.sum(self.IFNg))
 
-    T1IFN = field(type=np.ndarray)
-
-    @T1IFN.default
-    def _T1IFN_factory(self):
-        return np.zeros(self.geometry, dtype=np.float64)
+    T1IFN: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True)
+    )
 
     @property
     def total_T1IFN(self) -> float:
@@ -384,123 +344,88 @@ class AnCockrellModel:
 
     ######################################################################
 
-    num_pmns = field(init=False, factory=lambda: 0, type=int)
-    pmn_pointer = field(init=False, factory=lambda: 0, type=int)
+    num_pmns: int = field(init=False, factory=lambda: 0)
+    pmn_pointer: int = field(init=False, factory=lambda: 0)
 
-    pmn_mask = field(type=np.ndarray)
-
-    @pmn_mask.default
-    def _pmn_mask_factory(self):
-        return np.zeros(self.MAX_PMNS, dtype=bool)
-
-    pmn_locations = field(type=np.ndarray)
-
-    @pmn_locations.default
-    def _pmn_locations_factory(self):
-        return np.zeros((self.MAX_PMNS, 2), dtype=np.float64)
-
-    pmn_dirs = field(type=np.ndarray)
-
-    @pmn_dirs.default
-    def _pmn_dirs_factory(self):
-        return np.zeros(self.MAX_PMNS, dtype=np.float64)
-
-    pmn_age = field(type=np.ndarray)
-
-    @pmn_age.default
-    def _pmn_age_factory(self):
-        return np.zeros(self.MAX_PMNS, dtype=np.int64)
+    pmn_mask: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=bool), takes_self=True)
+    )
+    pmn_locations: np.ndarray = field(
+        default=Factory(
+            lambda self: np.zeros((self.MAX_PMNS, 2), dtype=np.float64), takes_self=True
+        )
+    )
+    pmn_dirs: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=np.float64), takes_self=True)
+    )
+    pmn_age: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=np.int64), takes_self=True)
+    )
 
     ######################################################################
 
-    num_macros = field(init=False, factory=lambda: 0, type=int)
-    macro_pointer = field(init=False, factory=lambda: 0, type=int)
+    num_macros: int = field(init=False, factory=lambda: 0)
+    macro_pointer: int = field(init=False, factory=lambda: 0)
 
-    macro_mask = field(type=np.ndarray)
-
-    @macro_mask.default
-    def _macro_mask_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=bool)
-
-    macro_locations = field(type=np.ndarray)
-
-    @macro_locations.default
-    def _macro_locations_factory(self):
-        return np.zeros((self.MAX_MACROPHAGES, 2), dtype=np.float64)
-
-    macro_dirs = field(type=np.ndarray)
-
-    @macro_dirs.default
-    def _macro_dirs_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
+    macro_mask: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True)
+    )
+    macro_locations: np.ndarray = field(
+        default=Factory(
+            lambda self: np.zeros((self.MAX_MACROPHAGES, 2), dtype=np.float64), takes_self=True
+        )
+    )
+    macro_dirs: np.ndarray = field(
+        default=Factory(
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+        )
+    )
 
     # NOTE: unused
-    # macro_internal_virus = field(type=np.ndarray)
-    #
-    # @macro_internal_virus.default
-    # def _macro_internal_virus_factory(self):
-    #     return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
+    # macro_internal_virus: np.ndarray = field(default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True))
 
-    macro_activation = field(type=np.ndarray)
+    macro_activation: np.ndarray = field(
+        default=Factory(
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+        )
+    )
 
-    @macro_activation.default
-    def _macro_activation_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
+    # macro_infected: np.ndarray  # unused
 
-    # macro_infected = field(type=np.ndarray)  # unused
-    #
-    # @macro_infected.default
-    # def _macro_infected_factory(self):
-    #     return np.zeros(self.MAX_MACROPHAGES, dtype=bool)
-
-    macro_cells_eaten = field(type=np.ndarray)
-
-    @macro_cells_eaten.default
-    def _macro_cells_eaten_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=np.int64)
-
-    macro_virus_eaten = field(type=np.ndarray)
-
-    @macro_virus_eaten.default
-    def _macro_virus_eaten_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
-
-    macro_pre_il1 = field(type=np.ndarray)
-
-    @macro_pre_il1.default
-    def _macro_pre_il1_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
-
-    macro_pre_il18 = field(type=np.ndarray)
-
-    @macro_pre_il18.default
-    def _macro_pre_il18_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
-
-    macro_pyroptosis_counter = field(type=np.ndarray)
-
-    @macro_pyroptosis_counter.default
-    def _macro_pyroptosis_counter_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=np.float64)
-
-    macro_inflammasome_primed = field(type=np.ndarray)
-
-    @macro_inflammasome_primed.default
-    def _macro_inflammasome_primed_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=bool)
-
-    macro_inflammasome_active = field(type=np.ndarray)
-
-    @macro_inflammasome_active.default
-    def _macro_inflammasome_active_factory(self):
-        return np.zeros(self.MAX_MACROPHAGES, dtype=bool)
+    macro_cells_eaten: np.ndarray = field(
+        default=Factory(
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.int64), takes_self=True
+        )
+    )
+    macro_virus_eaten: np.ndarray = field(
+        default=Factory(
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+        )
+    )
+    macro_pre_il1: np.ndarray = field(
+        default=Factory(
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+        )
+    )
+    macro_pre_il18: np.ndarray = field(
+        default=Factory(
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+        )
+    )
+    macro_pyroptosis_counter: np.ndarray = field(
+        default=Factory(
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+        )
+    )
+    macro_inflammasome_primed: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True)
+    )
+    macro_inflammasome_active: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True)
+    )
 
     # NOTE: unused
-    # macro_swollen = field(type=np.ndarray)
-    #
-    # @macro_swollen.default
-    # def _macro_swollen_factory(self):
-    #     return np.zeros(self.MAX_MACROPHAGES, dtype=bool)
+    # macro_swollen: np.ndarray = field(default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True))
 
     @property
     def macro_phago_counter(self) -> np.ndarray:
@@ -511,56 +436,36 @@ class AnCockrellModel:
 
     ######################################################################
 
-    num_nks = field(init=False, factory=lambda: 0, type=int)
-    nk_pointer = field(init=False, factory=lambda: 0, type=int)
+    num_nks: int = field(init=False, factory=lambda: 0)
+    nk_pointer: int = field(init=False, factory=lambda: 0)
 
-    nk_mask = field(type=np.ndarray)
-
-    @nk_mask.default
-    def _nk_mask_factory(self):
-        return np.zeros(self.MAX_NKS, dtype=bool)
-
-    nk_locations = field(type=np.ndarray)
-
-    @nk_locations.default
-    def _nk_locations_factory(self):
-        return np.zeros((self.MAX_NKS, 2), dtype=np.float64)
-
-    nk_dirs = field(type=np.ndarray)
-
-    @nk_dirs.default
-    def _nk_dirs_factory(self):
-        return np.zeros(self.MAX_NKS, dtype=np.float64)
+    nk_mask: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.MAX_NKS, dtype=bool), takes_self=True)
+    )
+    nk_locations: np.ndarray = field(
+        default=Factory(lambda self: np.zeros((self.MAX_NKS, 2), dtype=np.float64), takes_self=True)
+    )
+    nk_dirs: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.MAX_NKS, dtype=np.float64), takes_self=True)
+    )
 
     # unused
-    # nk_age = field(type=np.ndarray)
-    #
-    # @nk_age.default
-    # def _nk_age_factory(self):
-    #     return np.zeros(self.MAX_NKS, dtype=np.int64)
+    # nk_age: np.ndarray = field(default=Factory(lambda self: np.zeros(self.MAX_NKS, dtype=np.int64), takes_self=True))
 
     ######################################################################
 
-    num_dcs = field(init=False, factory=lambda: 0, type=int)
-    dc_pointer = field(init=False, factory=lambda: 0, type=int)
+    num_dcs: int = field(init=False, factory=lambda: 0)
+    dc_pointer: int = field(init=False, factory=lambda: 0)
 
-    dc_mask = field(type=np.ndarray)
-
-    @dc_mask.default
-    def _dc_mask_factory(self):
-        return np.zeros(self.MAX_DCS, dtype=bool)
-
-    dc_locations = field(type=np.ndarray)
-
-    @dc_locations.default
-    def _dc_locations_factory(self):
-        return np.zeros((self.MAX_DCS, 2), dtype=np.float64)
-
-    dc_dirs = field(type=np.ndarray)
-
-    @dc_dirs.default
-    def _dc_dirs_factory(self):
-        return np.zeros(self.MAX_DCS, dtype=np.float64)
+    dc_mask: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.MAX_DCS, dtype=bool), takes_self=True)
+    )
+    dc_locations: np.ndarray = field(
+        default=Factory(lambda self: np.zeros((self.MAX_DCS, 2), dtype=np.float64), takes_self=True)
+    )
+    dc_dirs: np.ndarray = field(
+        default=Factory(lambda self: np.zeros(self.MAX_DCS, dtype=np.float64), takes_self=True)
+    )
 
     ######################################################################
     # static properties
@@ -582,23 +487,23 @@ class AnCockrellModel:
 
     @property
     def empty_epithelium_count(self) -> int:
-        return np.sum(self.epithelium == EpiType.Empty)
+        return int(np.sum(self.epithelium == EpiType.Empty))
 
     @property
     def healthy_epithelium_count(self) -> int:
-        return np.sum(self.epithelium == EpiType.Healthy)
+        return int(np.sum(self.epithelium == EpiType.Healthy))
 
     @property
     def infected_epithelium_count(self) -> int:
-        return np.sum(self.epithelium == EpiType.Infected)
+        return int(np.sum(self.epithelium == EpiType.Infected))
 
     @property
     def dead_epithelium_count(self) -> int:
-        return np.sum(self.epithelium == EpiType.Dead)
+        return int(np.sum(self.epithelium == EpiType.Dead))
 
     @property
     def apoptosed_epithelium_count(self) -> int:
-        return np.sum(self.epithelium == EpiType.Apoptosed)
+        return int(np.sum(self.epithelium == EpiType.Apoptosed))
 
     @property
     def dc_count(self) -> int:
@@ -945,7 +850,7 @@ class AnCockrellModel:
         self.ROS[tuple(locations.T)] += self.pmn_ros_secretion_on_death
         self.IL1[tuple(locations.T)] += self.pmn_il1_secretion_on_death
         self.pmn_mask[age_mask] = False
-        self.num_pmns -= np.sum(age_mask)
+        self.num_pmns -= int(np.sum(age_mask))
 
         #
         # ;; chemotaxis to PAF and IL8
@@ -1395,7 +1300,7 @@ class AnCockrellModel:
         # to pyroptosis
         # set pyroptosed-macros pyroptosed-macros + 1
 
-        num_to_pyroptose = np.sum(pyroptosis_mask)
+        num_to_pyroptose = int(np.sum(pyroptosis_mask))
         if num_to_pyroptose <= 0:
             return
         self.pyroptosed_macros += num_to_pyroptose
@@ -1416,10 +1321,13 @@ class AnCockrellModel:
         )
         num_macro_creation_locations = macro_creation_locations.shape[1]
         if num_macro_creation_locations > 0:
-            for loc_idx in np.random.choice(
-                num_macro_creation_locations,
-                num_to_pyroptose,
-                replace=num_macro_creation_locations < num_to_pyroptose,
+            for loc_idx in cast(
+                np.ndarray,
+                np.random.choice(
+                    num_macro_creation_locations,
+                    num_to_pyroptose,
+                    replace=num_macro_creation_locations < num_to_pyroptose,
+                ),
             ):
                 self.create_macro(
                     loc=macro_creation_locations[:, loc_idx],
@@ -1809,6 +1717,8 @@ class AnCockrellModel:
         :param theta: direction of NK movement in radians (optional, random if omitted)
         :return:
         """
+        if isinstance(theta, Iterable):
+            theta = np.asarray(theta)
         number = min(number, self.GRID_WIDTH * self.GRID_HEIGHT - self.num_nks)
         if number == 0:
             return
@@ -2137,7 +2047,7 @@ class AnCockrellModel:
                     locations[idx, :] = np.mod(locations[idx, :], self.geometry)
                     location_used[tuple(locations[idx, :].astype(int))] = True
 
-    def plot_agents(self, ax: plt.Axes, *, base_zorder: int = -1):
+    def plot_agents(self, ax: matplotlib.axes.Axes, *, base_zorder: int = -1):
         """
         Plot the agents (Epithelial cells, macrophages, NKs, PMNs, DCs, endothelial cells).
         :param ax: Axes on which to plot the agents
@@ -2226,7 +2136,7 @@ class AnCockrellModel:
         ax.set_xlim(0, self.geometry[0])
         ax.set_ylim(0, self.geometry[1])
 
-    def plot_field(self, ax: plt.Axes, *, field_name: str):
+    def plot_field(self, ax: matplotlib.axes.Axes, *, field_name: str):
         """
         Plot one of the molecular fields.
 
@@ -2317,85 +2227,82 @@ class AnCockrellModel:
         :return:
         """
         with h5py.File(filename, "r+") as f:
-            grp: h5py.Group = f[str(time)]
+            grp = cast(h5py.Group, f[str(time)])
+
+            def scalar(key: str):
+                return cast(h5py.Dataset, grp[key])[()]
+
             # TODO: add new params
             model = cls(
-                GRID_WIDTH=grp["GRID_WIDTH"][()],
-                GRID_HEIGHT=grp["GRID_HEIGHT"][()],
-                is_bat=grp["is_bat"][()],
-                init_inoculum=grp["init_inoculum"][()],
-                init_dcs=grp["init_dcs"][()],
-                init_nks=grp["init_nks"][()],
-                init_macros=grp["init_macros"][()],
-                macro_phago_recovery=grp["macro_phago_recovery"][()],
-                macro_phago_limit=grp["macro_phago_limit"][()],
-                inflammasome_activation_threshold=grp["inflammasome_activation_threshold"][()],
-                inflammasome_priming_threshold=grp["inflammasome_priming_threshold"][()],
-                viral_carrying_capacity=grp["viral_carrying_capacity"][()],
-                susceptibility_to_infection=grp["susceptibility_to_infection"][()],
-                human_endo_activation=grp["human_endo_activation"][()],
-                bat_endo_activation=grp["bat_endo_activation"][()],
-                bat_metabolic_byproduct=grp["bat_metabolic_byproduct"][()],
-                human_metabolic_byproduct=grp["human_metabolic_byproduct"][()],
-                viral_incubation_threshold=grp["viral_incubation_threshold"][()],
-                MAX_PMNS=grp["MAX_PMNS"][()],
-                MAX_DCS=grp["MAX_DCS"][()],
-                MAX_MACROPHAGES=grp["MAX_MACROPHAGES"][()],
-                MAX_NKS=grp["MAX_NKS"][()],
+                GRID_WIDTH=int(scalar("GRID_WIDTH")),
+                GRID_HEIGHT=int(scalar("GRID_HEIGHT")),
+                is_bat=bool(scalar("is_bat")),
+                init_inoculum=int(scalar("init_inoculum")),
+                init_dcs=int(scalar("init_dcs")),
+                init_nks=int(scalar("init_nks")),
+                init_macros=int(scalar("init_macros")),
+                macro_phago_recovery=float(scalar("macro_phago_recovery")),
+                macro_phago_limit=int(scalar("macro_phago_limit")),
+                inflammasome_activation_threshold=int(scalar("inflammasome_activation_threshold")),
+                inflammasome_priming_threshold=float(scalar("inflammasome_priming_threshold")),
+                viral_carrying_capacity=int(scalar("viral_carrying_capacity")),
+                susceptibility_to_infection=int(scalar("susceptibility_to_infection")),
+                human_endo_activation=int(scalar("human_endo_activation")),
+                bat_endo_activation=int(scalar("bat_endo_activation")),
+                bat_metabolic_byproduct=float(scalar("bat_metabolic_byproduct")),
+                human_metabolic_byproduct=float(scalar("human_metabolic_byproduct")),
+                viral_incubation_threshold=int(scalar("viral_incubation_threshold")),
+                MAX_PMNS=int(scalar("MAX_PMNS")),
+                MAX_DCS=int(scalar("MAX_DCS")),
+                MAX_MACROPHAGES=int(scalar("MAX_MACROPHAGES")),
+                MAX_NKS=int(scalar("MAX_NKS")),
             )
 
             # scalars not initialized by init
-            model.time = grp["time"][()]
+            model.time = int(scalar("time"))
 
             num_macros = -1
             num_pmns = -1
             num_nks = -1
             num_dcs = -1
             for k in grp.keys():
-                if len(grp[k]) == 0:
+                ds = cast(h5py.Dataset, grp[k])
+                if len(ds) == 0:
                     # skip the scalars, already dealt with
                     continue
-                elif len(grp[k]) == 1:
+                elif len(ds) == 1:
                     # 1d arrays correspond to agent attributes.
                     # we learn the number of agents out of their dimensions.
                     model_field = getattr(model, k)
                     if k.startswith("macro"):
                         if num_macros == -1:
-                            num_macros = grp[k].shape[0]
+                            num_macros = ds.shape[0]
                         else:
-                            assert (
-                                num_macros == grp[k].shape[0]
-                            ), "agent arrays have inconsistent sizes"
-                        model_field[:num_macros] = grp[k]
+                            assert num_macros == ds.shape[0], "agent arrays have inconsistent sizes"
+                        model_field[:num_macros] = ds
                     elif k.startswith("pmn"):
                         if num_pmns == -1:
-                            num_pmns = grp[k].shape[0]
+                            num_pmns = ds.shape[0]
                         else:
-                            assert (
-                                num_pmns == grp[k].shape[0]
-                            ), "agent arrays have inconsistent sizes"
-                        model_field[:num_pmns] = grp[k]
+                            assert num_pmns == ds.shape[0], "agent arrays have inconsistent sizes"
+                        model_field[:num_pmns] = ds
                     elif k.startswith("nk"):
                         if num_nks == -1:
-                            num_nks = grp[k].shape[0]
+                            num_nks = ds.shape[0]
                         else:
-                            assert (
-                                num_nks == grp[k].shape[0]
-                            ), "agent arrays have inconsistent sizes"
-                        model_field[:num_nks] = grp[k]
+                            assert num_nks == ds.shape[0], "agent arrays have inconsistent sizes"
+                        model_field[:num_nks] = ds
                     elif k.startswith("dc"):
                         if num_dcs == -1:
-                            num_dcs = grp[k].shape[0]
+                            num_dcs = ds.shape[0]
                         else:
-                            assert (
-                                num_dcs == grp[k].shape[0]
-                            ), "agent arrays have inconsistent sizes"
-                        model_field[:num_dcs] = grp[k]
+                            assert num_dcs == ds.shape[0], "agent arrays have inconsistent sizes"
+                        model_field[:num_dcs] = ds
 
-                elif len(grp[k]) == 2:
+                elif len(ds) == 2:
                     # 2d arrays are spatial fields
                     model_field = getattr(model, k)
-                    model_field[:, :] = grp[k]
+                    model_field[:, :] = ds
                 else:
                     raise RuntimeError(f"Unknown/Invalid data {k} in HDF5 file")
 

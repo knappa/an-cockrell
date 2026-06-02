@@ -4,5 +4,6 @@ A reimplementation in python of the NetLogo model from "Comparative Computationa
 
 See the jupyter notebook for details on running the model. 
 
+Install using `pip install -e .` in the top directory.
 
 The file `an-cockrell-runner.py` runs latin hypercube sampling for the purposes of sensitivity analysis. The file `slurm-job.sh` is used to run this same script on HiPerGator.
