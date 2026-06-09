@@ -25,6 +25,11 @@ dependencies = [
     "dill",
 ]
 
+[project.optional-dependencies]
+all = [
+    "tqdm",
+]
+
 [project.urls]
 Homepage = "https://github.com/knappa/an-cockrell"
 Issues = "https://github.com/knappa/an-cockrell/issues"
