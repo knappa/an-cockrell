@@ -480,11 +480,6 @@ class AnCockrellModel:
         metadata={"type": "agent"},
     )
 
-    # NOTE: unused
-    # macro_swollen: np.ndarray = field(
-    #   default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=bool), takes_self=True)
-    # )
-
     @property
     def macro_phago_counter(self) -> np.ndarray:
         return np.maximum(
