@@ -1,9 +1,9 @@
 # Name of model: Comparative Biology Immune ABM (CBIABM)
 
-Purpose: Simulate those aspects of innate immune response different between bats and humas. These areas are:
+Purpose: Simulate those aspects of innate immune response different between bats and humans. These areas are:
 
-1. Decreased sensativity to P/DAMP due to high metabolic rate
-2 Decreased ramp up of T1IFNs in response to perturbation => intrinsic to this is that baseline is higher?
+1. Decreased sensitivity to P/DAMP due to high metabolic rate
+2. Decreased ramp up of T1IFNs in response to perturbation => intrinsic to this is that baseline is higher?
 3. Decreased inflammasome activation => consequences are decreased caspase-1 activation which leads to decreased IL1/IL18 and decreased pyroptosis
 4. Decreased processing/release of IL1
 
@@ -106,8 +106,8 @@ Endothelial activation and PMN burst:
 3. After 36 steps (6 hrs) representing adhesion activation, 10% chance will hatch PMN
 4. Adhesed PMNs jump random 5 upon arrival (prevents self containment)
 5. PMN will live 6 hrs (36 steps) in tissue then undergo respiratory burst and produce ROS + 10 and IL1 + 1
-5. Epis and Infected-Epis will die with ROS-counter > 10 (+ ROS per step); this mode of death (dead-epis) will lead to P/DAMP + 10
-6. Dead-epis now make P/DAMPS + 1 until they are phagocytosed
+6. Epis and Infected-Epis will die with ROS-counter > 10 (+ ROS per step); this mode of death (dead-epis) will lead to P/DAMP + 10
+7. Dead-epis now make P/DAMPS + 1 until they are phagocytosed
 
 ---
 
