@@ -481,7 +481,7 @@ class AnCockrellModel:
     )
 
     @property
-    def macro_phago_counter(self) -> np.ndarray:
+    def _macro_phago_counter(self) -> np.ndarray:
         return np.maximum(
             0.0,
             self.macro_cells_eaten - self.macro_virus_eaten / 10 - self.macro_phago_recovery,
@@ -1171,7 +1171,7 @@ class AnCockrellModel:
         #     [;; PHAGOCYTOSIS
         #     set size 1
 
-        under_limit_mask = self.macro_mask & (self.macro_phago_counter < self.macro_phago_limit)
+        under_limit_mask = self.macro_mask & (self._macro_phago_counter < self.macro_phago_limit)
         # self.macro_swollen[under_limit_mask] = False # NOTE unused
 
         #     ;; of virus, uses local variable "q" to represent amount of virus eaten (avoid negative values)
@@ -2222,14 +2222,14 @@ class AnCockrellModel:
         # macrophages
         # * Green Circles = Macrophages
         # * Large Green Circles = Macrophages at phagocytosis limit
-        under_limit_mask = self.macro_phago_counter < self.macro_phago_limit
+        under_limit_mask = self._macro_phago_counter < self.macro_phago_limit
         ax.scatter(
             *self.macro_locations[self.macro_mask & under_limit_mask].T,
             color="green",
             marker="o",
             zorder=base_zorder + 1,
         )
-        over_limit_mask = self.macro_phago_counter >= self.macro_phago_limit
+        over_limit_mask = self._macro_phago_counter >= self.macro_phago_limit
         ax.scatter(
             *self.macro_locations[self.macro_mask & over_limit_mask].T,
             color="green",
