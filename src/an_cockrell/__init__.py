@@ -30,12 +30,12 @@ class EndoType(IntEnum):
     Dead = 2
 
 
-def epitype_one_hot_encoding(e: Union[EpiType, np.ndarray], *, dtype=np.float64):
+def epitype_one_hot_encoding(e: Union[EpiType, np.ndarray], *, dtype=np.float32):
     """
     Computes the one-hot encoding for an instance of the categorical type EpiType
 
     :param e: an EpiType
-    :param dtype: type of vector, default float64
+    :param dtype: type of vector, default float32
     :return: one hot encoding
     """
     if isinstance(e, np.ndarray):
@@ -71,6 +71,18 @@ class AnCockrellModel:
     MAX_MACROPHAGES: int = field(default=MEDIUM_NUM, metadata={"type": "bookkeeping"})
     MAX_NKS: int = field(default=MEDIUM_NUM, metadata={"type": "bookkeeping"})
     HARD_BOUND: bool = field(default=True, metadata={"type": "bookkeeping"})
+    # set by load() to skip the initial infection/agent-creation in __attrs_post_init__,
+    # since that data is already being restored from a checkpoint
+    _skip_post_init_seeding: bool = field(default=False, metadata={"type": "bookkeeping"})
+
+    # seed for the model's random number generator. None means an unpredictable,
+    # OS-provided seed (i.e. non-reproducible runs)
+    seed: Optional[int] = field(default=None, metadata={"type": "init_parameter"})
+    rng: np.random.Generator = field(
+        init=False,
+        default=Factory(lambda self: np.random.default_rng(self.seed), takes_self=True),
+        metadata={"type": "rng"},
+    )
 
     is_bat: bool = field(metadata={"type": "parameter"})
     init_inoculum: int = field(metadata={"type": "init_parameter"})
@@ -214,33 +226,35 @@ class AnCockrellModel:
         metadata={"type": "grid_agent"},
     )
     epithelium_ros_damage_counter: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "grid_agent"},
     )
     epi_regrow_counter: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int32), takes_self=True),
         metadata={"type": "grid_agent"},
     )
     epi_apoptosis_counter: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int32), takes_self=True),
         metadata={"type": "grid_agent"},
     )
     epi_intracellular_virus: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int32), takes_self=True),
         metadata={"type": "grid_agent"},
     )
     epi_cell_membrane: np.ndarray = field(
         default=Factory(
-            lambda self: np.random.randint(975, 975 + 51, size=self.geometry), takes_self=True
+            lambda self: self.rng.integers(975, 975 + 51, size=self.geometry, dtype=np.int32),
+            takes_self=True,
         ),
         metadata={"type": "grid_agent"},
     )
     epi_apoptosis_threshold: np.ndarray = field(
         default=Factory(
-            lambda self: np.random.randint(
+            lambda self: self.rng.integers(
                 self.epi_apoptosis_threshold_lower,
                 self.epi_apoptosis_threshold_lower + self.epi_apoptosis_threshold_range,
                 size=self.geometry,
+                dtype=np.int32,
             ),
             takes_self=True,
         ),
@@ -257,7 +271,7 @@ class AnCockrellModel:
         metadata={"type": "grid_agent"},
     )
     endothelial_adhesion_counter: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.int32), takes_self=True),
         metadata={"type": "grid_agent"},
     )
 
@@ -265,7 +279,7 @@ class AnCockrellModel:
     # spatial fields
 
     extracellular_virus: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -274,7 +288,7 @@ class AnCockrellModel:
         return float(np.sum(self.extracellular_virus))
 
     P_DAMPS: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -283,7 +297,7 @@ class AnCockrellModel:
         return float(np.sum(self.P_DAMPS))
 
     ROS: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -292,7 +306,7 @@ class AnCockrellModel:
         return float(np.sum(self.ROS))
 
     PAF: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -301,7 +315,7 @@ class AnCockrellModel:
         return float(np.sum(self.PAF))
 
     TNF: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -310,7 +324,7 @@ class AnCockrellModel:
         return float(np.sum(self.TNF))
 
     IL1: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -319,7 +333,7 @@ class AnCockrellModel:
         return float(np.sum(self.IL1))
 
     IL6: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -328,7 +342,7 @@ class AnCockrellModel:
         return float(np.sum(self.IL6))
 
     IL8: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -337,7 +351,7 @@ class AnCockrellModel:
         return float(np.sum(self.IL8))
 
     IL10: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -346,7 +360,7 @@ class AnCockrellModel:
         return float(np.sum(self.IL10))
 
     IL12: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -355,7 +369,7 @@ class AnCockrellModel:
         return float(np.sum(self.IL12))
 
     IL18: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -364,7 +378,7 @@ class AnCockrellModel:
         return float(np.sum(self.IL18))
 
     IFNg: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -373,7 +387,7 @@ class AnCockrellModel:
         return float(np.sum(self.IFNg))
 
     T1IFN: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
         metadata={"type": "molecule"},
     )
 
@@ -392,16 +406,16 @@ class AnCockrellModel:
     )
     pmn_locations: np.ndarray = field(
         default=Factory(
-            lambda self: np.zeros((self.MAX_PMNS, 2), dtype=np.float64), takes_self=True
+            lambda self: np.zeros((self.MAX_PMNS, 2), dtype=np.float32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
     pmn_dirs: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=np.float32), takes_self=True),
         metadata={"type": "agent"},
     )
     pmn_age: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=np.int64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.MAX_PMNS, dtype=np.int32), takes_self=True),
         metadata={"type": "agent"},
     )
 
@@ -416,25 +430,25 @@ class AnCockrellModel:
     )
     macro_locations: np.ndarray = field(
         default=Factory(
-            lambda self: np.zeros((self.MAX_MACROPHAGES, 2), dtype=np.float64), takes_self=True
+            lambda self: np.zeros((self.MAX_MACROPHAGES, 2), dtype=np.float32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
     macro_dirs: np.ndarray = field(
         default=Factory(
-            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
 
     # NOTE: unused
     # macro_internal_virus: np.ndarray = field(
-    #   default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True)
+    #   default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float32), takes_self=True)
     # )
 
     macro_activation: np.ndarray = field(
         default=Factory(
-            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
@@ -443,31 +457,31 @@ class AnCockrellModel:
 
     macro_cells_eaten: np.ndarray = field(
         default=Factory(
-            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.int64), takes_self=True
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.int32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
     macro_virus_eaten: np.ndarray = field(
         default=Factory(
-            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
     macro_pre_il1: np.ndarray = field(
         default=Factory(
-            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
     macro_pre_il18: np.ndarray = field(
         default=Factory(
-            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
     macro_pyroptosis_counter: np.ndarray = field(
         default=Factory(
-            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float64), takes_self=True
+            lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
@@ -498,17 +512,17 @@ class AnCockrellModel:
     )
     nk_locations: np.ndarray = field(
         default=Factory(
-            lambda self: np.zeros((self.MAX_NKS, 2), dtype=np.float64), takes_self=True
+            lambda self: np.zeros((self.MAX_NKS, 2), dtype=np.float32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
     nk_dirs: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_NKS, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.MAX_NKS, dtype=np.float32), takes_self=True),
         metadata={"type": "agent"},
     )
 
     # unused
-    # nk_age: np.ndarray = field(default=Factory(lambda self: np.zeros(self.MAX_NKS, dtype=np.int64), takes_self=True))
+    # nk_age: np.ndarray = field(default=Factory(lambda self: np.zeros(self.MAX_NKS, dtype=np.int32), takes_self=True))
 
     ######################################################################
 
@@ -521,12 +535,12 @@ class AnCockrellModel:
     )
     dc_locations: np.ndarray = field(
         default=Factory(
-            lambda self: np.zeros((self.MAX_DCS, 2), dtype=np.float64), takes_self=True
+            lambda self: np.zeros((self.MAX_DCS, 2), dtype=np.float32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
     dc_dirs: np.ndarray = field(
-        default=Factory(lambda self: np.zeros(self.MAX_DCS, dtype=np.float64), takes_self=True),
+        default=Factory(lambda self: np.zeros(self.MAX_DCS, dtype=np.float32), takes_self=True),
         metadata={"type": "agent"},
     )
 
@@ -587,9 +601,12 @@ class AnCockrellModel:
     ######################################################################
 
     def __attrs_post_init__(self):
+        if self._skip_post_init_seeding:
+            return
+
         if self.is_bat:
             self.T1IFN[:, :] = self.bat_t1ifn_init_amount * (
-                np.random.rand(*self.geometry) < self.bat_t1ifn_init_prob
+                self.rng.random(self.geometry) < self.bat_t1ifn_init_prob
             )
 
         self.create_nk(number=self.init_nks)
@@ -639,7 +656,7 @@ class AnCockrellModel:
             return
 
         rows, cols = np.divmod(
-            np.random.choice(grid_size, init_inoculum, replace=False),
+            self.rng.choice(grid_size, init_inoculum, replace=False),
             self.GRID_WIDTH,
         )
 
@@ -648,7 +665,7 @@ class AnCockrellModel:
             cols = [cols[0]]
 
         for row, col in zip(rows, cols):
-            self.extracellular_virus[row, col] = np.random.randint(
+            self.extracellular_virus[row, col] = self.rng.integers(
                 self.extracellular_virus_init_amount_lower,
                 self.extracellular_virus_init_amount_lower
                 + self.extracellular_virus_init_amount_range,
@@ -715,7 +732,7 @@ class AnCockrellModel:
             (self.epithelium == EpiType.Healthy)
             & (self.extracellular_virus > 0)
             & (
-                100 * np.random.rand(*self.geometry)
+                100 * self.rng.random(self.geometry)
                 < np.maximum(self.susceptibility_to_infection, self.extracellular_virus)
             )
         )
@@ -860,13 +877,13 @@ class AnCockrellModel:
         #       set epi-regrow-counter 0 ; if sprouts, reset counter to 0
 
         self.epi_intracellular_virus[regrowth_patches] = 0
-        self.epi_cell_membrane[regrowth_patches] = np.random.randint(
+        self.epi_cell_membrane[regrowth_patches] = self.rng.integers(
             self.epi_cell_membrane_init_lower,
             self.epi_cell_membrane_init_lower + self.epi_cell_membrane_init_range,
             size=np.sum(regrowth_patches),
         )
         self.epi_apoptosis_counter[regrowth_patches] = 0
-        self.epi_apoptosis_threshold[regrowth_patches] = np.random.randint(
+        self.epi_apoptosis_threshold[regrowth_patches] = self.rng.integers(
             self.epi_apoptosis_threshold_lower_regrow,
             self.epi_apoptosis_threshold_lower_regrow + self.epi_apoptosis_threshold_range_regrow,
             size=np.sum(regrowth_patches),
@@ -909,7 +926,7 @@ class AnCockrellModel:
         #    set IL1 IL1 + 1
         #    die]
         age_mask = self.pmn_mask & (self.pmn_age > self.pmn_max_age)
-        locations = self.pmn_locations[age_mask].astype(np.int64)
+        locations = self.pmn_locations[age_mask].astype(np.int32)
         self.ROS[tuple(locations.T)] += self.pmn_ros_secretion_on_death
         self.IL1[tuple(locations.T)] += self.pmn_il1_secretion_on_death
         self.pmn_mask[age_mask] = False
@@ -933,7 +950,7 @@ class AnCockrellModel:
         chemoattractant_dy = (
             np.roll(chemoattractant, -1, axis=1) - np.roll(chemoattractant, 1, axis=1)
         ) / 2.0
-        locations = self.pmn_locations[self.pmn_mask].astype(np.int64)
+        locations = self.pmn_locations[self.pmn_mask].astype(np.int32)
         vecs = np.stack(
             [
                 chemoattractant_dx[tuple(locations.T)],
@@ -942,7 +959,7 @@ class AnCockrellModel:
             axis=1,
         )
         vecs += np.clip(
-            np.random.normal(0.0, 1e-5, size=vecs.shape), -1.0, 1.0
+            self.rng.normal(0.0, 1e-5, size=vecs.shape), -1.0, 1.0
         )  # small noise (randomizes direction in absence of gradient)
         norms = np.linalg.norm(vecs, axis=-1)
         norms[norms <= 1e-8] = 1.0  # effectively zero norm vectors will be unnormalized
@@ -952,13 +969,15 @@ class AnCockrellModel:
         #   [wiggle
         #   ]
         self.pmn_dirs += (
-            (np.random.rand(self.MAX_PMNS) - np.random.rand(self.MAX_PMNS)) * np.pi / 4.0
+            (self.rng.random(self.MAX_PMNS) - self.rng.random(self.MAX_PMNS)) * np.pi / 4.0
         )
         self.pmn_dirs[np.where(self.pmn_dirs > np.pi)] -= 2 * np.pi
         self.pmn_dirs[np.where(self.pmn_dirs < -np.pi)] += 2 * np.pi
         directions = np.stack([np.cos(self.pmn_dirs), np.sin(self.pmn_dirs)], axis=1)
         self.pmn_locations += 0.1 * directions
-        self.pmn_locations = np.mod(self.pmn_locations, self.geometry)
+        self.pmn_locations[:] = np.mod(self.pmn_locations, self.geometry).astype(
+            np.float32, copy=False
+        )
 
         self._destack(mask=self.pmn_mask, locations=self.pmn_locations)
 
@@ -975,7 +994,7 @@ class AnCockrellModel:
         """
         # to NK-function
 
-        locations = self.nk_locations[self.nk_mask].astype(np.int64)
+        locations = self.nk_locations[self.nk_mask].astype(np.int32)
 
         #   ;; INDUCTION OF APOPTOSIS
         # ask infected-epis-here
@@ -990,10 +1009,10 @@ class AnCockrellModel:
         cytokine_production_mask = (
             self.nk_mask
             & ((self.T1IFN > 0) & (self.IL12 > 0) & (self.IL18 > 0))[
-                tuple(self.nk_locations.T.astype(np.int64))
+                tuple(self.nk_locations.T.astype(np.int32))
             ]
         )
-        cytokine_production_locations = self.nk_locations[cytokine_production_mask].astype(np.int64)
+        cytokine_production_locations = self.nk_locations[cytokine_production_mask].astype(np.int32)
         self.IFNg[tuple(cytokine_production_locations.T)] += self.nk_ifng_secretion
 
         #   ;; Chemotaxis to T1IFN made by infected-epis, slows movement rate to 1/10 of uphill primitive
@@ -1014,7 +1033,7 @@ class AnCockrellModel:
         chemoattractant_dy = (
             np.roll(chemoattractant, -1, axis=1) - np.roll(chemoattractant, 1, axis=1)
         ) / 2.0
-        locations = self.nk_locations[self.nk_mask].astype(np.int64)
+        locations = self.nk_locations[self.nk_mask].astype(np.int32)
         vecs = np.stack(
             [
                 chemoattractant_dx[tuple(locations.T)],
@@ -1023,7 +1042,7 @@ class AnCockrellModel:
             axis=1,
         )
         vecs += np.clip(
-            np.random.normal(0.0, 1e-5, size=vecs.shape), -1.0, 1.0
+            self.rng.normal(0.0, 1e-5, size=vecs.shape), -1.0, 1.0
         )  # small noise (randomizes direction in absence of gradient)
         norms = np.linalg.norm(vecs, axis=-1)
         norms[norms <= 1e-8] = 1.0  # effectively zero norm vectors will be unnormalized
@@ -1032,12 +1051,16 @@ class AnCockrellModel:
 
         #   [wiggle
         #   ]
-        self.nk_dirs += (np.random.rand(self.MAX_NKS) - np.random.rand(self.MAX_NKS)) * np.pi / 4.0
+        self.nk_dirs += (
+            (self.rng.random(self.MAX_NKS) - self.rng.random(self.MAX_NKS)) * np.pi / 4.0
+        )
         self.nk_dirs[np.where(self.nk_dirs > np.pi)] -= 2 * np.pi
         self.nk_dirs[np.where(self.nk_dirs < -np.pi)] += 2 * np.pi
         directions = np.stack([np.cos(self.nk_dirs), np.sin(self.nk_dirs)], axis=1)
         self.nk_locations += 0.1 * directions
-        self.nk_locations = np.mod(self.nk_locations, self.geometry)
+        self.nk_locations[:] = np.mod(self.nk_locations, self.geometry).astype(
+            np.float32, copy=False
+        )
 
         self._destack(mask=self.nk_mask, locations=self.nk_locations)
 
@@ -1045,7 +1068,7 @@ class AnCockrellModel:
         # set IL12 max list 0 IL12 - 0.1
         # set IL18 max list 0 IL18 - 0.1
 
-        locations = self.nk_locations[self.nk_mask].astype(np.int64)
+        locations = self.nk_locations[self.nk_mask].astype(np.int32)
         self.IL12[tuple(locations.T)] -= np.minimum(0.1, self.IL12[tuple(locations.T)])
         self.IL18[tuple(locations.T)] -= np.minimum(0.1, self.IL18[tuple(locations.T)])
 
@@ -1063,9 +1086,9 @@ class AnCockrellModel:
         # ACK: the code below is roughly what you would want if the model included the infection of macrophages.
         # However, virus-invade-cell has its macrophage code commented out.
         # mask = self.macro_mask
-        # locations = self.macro_locations[mask].astype(np.int64)
+        # locations = self.macro_locations[mask].astype(np.int32)
         # extracellular_virus_at_locations = self.extracellular_virus[tuple(locations.T)]
-        # cells_to_invade = 100 * np.random.rand(
+        # cells_to_invade = 100 * self.rng.random(
         #     *extracellular_virus_at_locations.shape
         # ) < np.maximum(
         #     self.susceptibility_to_infection, extracellular_virus_at_locations
@@ -1080,7 +1103,7 @@ class AnCockrellModel:
         #                                                                                                  gap between
         #                                                                                                  pro and anti
         #                                                                                                  macros
-        locations = self.macro_locations[self.macro_mask].astype(np.int64)
+        locations = self.macro_locations[self.macro_mask].astype(np.int32)
         self.macro_activation[self.macro_mask] += (
             self.T1IFN[tuple(locations.T)]
             + self.P_DAMPS[tuple(locations.T)]
@@ -1125,7 +1148,7 @@ class AnCockrellModel:
         chemoattractant_dy = (
             np.roll(chemoattractant, -1, axis=1) - np.roll(chemoattractant, 1, axis=1)
         ) / 2.0
-        locations = self.macro_locations[self.macro_mask].astype(np.int64)
+        locations = self.macro_locations[self.macro_mask].astype(np.int32)
         vecs = np.stack(
             [
                 chemoattractant_dx[tuple(locations.T)],
@@ -1134,7 +1157,7 @@ class AnCockrellModel:
             axis=1,
         )
         vecs += np.clip(
-            np.random.normal(0.0, 1e-5, size=vecs.shape), -1.0, 1.0
+            self.rng.normal(0.0, 1e-5, size=vecs.shape), -1.0, 1.0
         )  # small noise (randomizes direction in absence of gradient)
         norms = np.linalg.norm(vecs, axis=-1)
         norms[norms <= 1e-8] = 1.0  # effectively zero norm vectors will be unnormalized
@@ -1144,7 +1167,7 @@ class AnCockrellModel:
         #   [wiggle
         #   ]
         self.macro_dirs += (
-            (np.random.rand(self.MAX_MACROPHAGES) - np.random.rand(self.MAX_MACROPHAGES))
+            (self.rng.random(self.MAX_MACROPHAGES) - self.rng.random(self.MAX_MACROPHAGES))
             * np.pi
             / 4.0
         )
@@ -1153,7 +1176,9 @@ class AnCockrellModel:
         self.macro_locations += 0.1 * np.stack(
             [np.cos(self.macro_dirs), np.sin(self.macro_dirs)], axis=1
         )
-        self.macro_locations = np.mod(self.macro_locations, self.geometry)
+        self.macro_locations[:] = np.mod(self.macro_locations, self.geometry).astype(
+            np.float32, copy=False
+        )
 
         self._destack(mask=self.macro_mask, locations=self.macro_locations)
 
@@ -1182,7 +1207,7 @@ class AnCockrellModel:
         #       set virus-eaten virus-eaten + q
         #      ]
 
-        locations = self.macro_locations[under_limit_mask].astype(np.int64)
+        locations = self.macro_locations[under_limit_mask].astype(np.int32)
         virus_uptake = np.minimum(
             self.macro_max_virus_uptake, self.extracellular_virus[tuple(locations.T)]
         )  # TODO: pull-request submitted on disagreement between code and comment
@@ -1197,17 +1222,17 @@ class AnCockrellModel:
         #      ]
 
         macros_at_apoptosed_epi = under_limit_mask & (
-            self.epithelium[tuple(self.macro_locations.T.astype(np.int64))] == EpiType.Apoptosed
+            self.epithelium[tuple(self.macro_locations.T.astype(np.int32))] == EpiType.Apoptosed
         )
         self.macro_cells_eaten[macros_at_apoptosed_epi] += 1
         self.apoptosis_eaten_counter += np.sum(macros_at_apoptosed_epi)
-        self.epithelium[tuple(self.macro_locations[macros_at_apoptosed_epi].T.astype(np.int64))] = (
+        self.epithelium[tuple(self.macro_locations[macros_at_apoptosed_epi].T.astype(np.int32))] = (
             EpiType.Empty
         )
 
         # clear intracellular virus counter
         self.epi_intracellular_virus[
-            tuple(self.macro_locations[macros_at_apoptosed_epi].T.astype(np.int64))
+            tuple(self.macro_locations[macros_at_apoptosed_epi].T.astype(np.int32))
         ] = 0
 
         #    ;; of dead epis
@@ -1218,13 +1243,13 @@ class AnCockrellModel:
         #   ]
 
         dead_epis = under_limit_mask & (
-            self.epithelium[tuple(self.macro_locations.T.astype(np.int64))] == EpiType.Dead
+            self.epithelium[tuple(self.macro_locations.T.astype(np.int32))] == EpiType.Dead
         )
         self.macro_cells_eaten[dead_epis] += 1
-        self.epithelium[tuple(self.macro_locations[dead_epis].T.astype(np.int64))] = EpiType.Empty
+        self.epithelium[tuple(self.macro_locations[dead_epis].T.astype(np.int32))] = EpiType.Empty
 
         # clear intracellular virus counter
-        self.epi_intracellular_virus[tuple(self.macro_locations[dead_epis].T.astype(np.int64))] = 0
+        self.epi_intracellular_virus[tuple(self.macro_locations[dead_epis].T.astype(np.int32))] = 0
 
         # if macro-activation-level > 5 ;; This is where decreased sensitivity to P/DAMPS can be seen. Link
         #                                  macro-activation-level to Inflammasome variable?
@@ -1248,16 +1273,16 @@ class AnCockrellModel:
         activated_macros = self.macro_mask & (
             self.macro_activation > self.macro_activation_threshold
         )
-        locations = self.macro_locations[activated_macros].astype(np.int64)
+        locations = self.macro_locations[activated_macros].astype(np.int32)
         self.IL8[tuple(locations.T)] += self.activated_macro_il8_secretion
         self.IL12[tuple(locations.T)] += self.activated_macro_il12_secretion
         self.macro_activation[activated_macros] -= self.macro_activation_threshold
 
         downstream_products_mask = (
             activated_macros
-            & (self.IL1 + self.P_DAMPS > 0)[tuple(self.macro_locations.T.astype(np.int64))]
+            & (self.IL1 + self.P_DAMPS > 0)[tuple(self.macro_locations.T.astype(np.int32))]
         )
-        downstream_locations = self.macro_locations[downstream_products_mask].astype(np.int64)
+        downstream_locations = self.macro_locations[downstream_products_mask].astype(np.int32)
         self.TNF[tuple(downstream_locations.T)] += self.activated_macro_tnf_secretion
         self.IL6[tuple(downstream_locations.T)] += self.activated_macro_il6_secretion
         self.IL10[tuple(downstream_locations.T)] += self.activated_macro_il10_secretion
@@ -1275,7 +1300,7 @@ class AnCockrellModel:
         low_activated_macros = self.macro_mask & (
             self.macro_activation < -self.macro_antiactivation_threshold
         )
-        locations = self.macro_locations[low_activated_macros].astype(np.int64)
+        locations = self.macro_locations[low_activated_macros].astype(np.int32)
         self.IL10[tuple(locations.T)] += self.antiactivated_macro_il10_secretion
         self.macro_activation[low_activated_macros] += self.macro_antiactivation_threshold
 
@@ -1306,7 +1331,7 @@ class AnCockrellModel:
         #                                                        to pyroptosis so counter threshold is 12
 
         inflammasome_active_mask = self.macro_mask & self.macro_inflammasome_active
-        locations = self.macro_locations[inflammasome_active_mask].astype(np.int64)
+        locations = self.macro_locations[inflammasome_active_mask].astype(np.int32)
         self.IL1[tuple(locations.T)] += self.inflammasome_il1_secretion
         self.macro_pre_il1[inflammasome_active_mask] += self.inflammasome_macro_pre_il1_secretion
         self.IL18[tuple(locations.T)] += self.inflammasome_il18_secretion
@@ -1343,7 +1368,7 @@ class AnCockrellModel:
         inflammasome_priming_mask = (
             self.macro_mask
             & ((self.P_DAMPS + self.TNF) > self.inflammasome_priming_threshold)[
-                tuple(self.macro_locations.T.astype(np.int64))
+                tuple(self.macro_locations.T.astype(np.int32))
             ]
         )
         self.macro_inflammasome_primed[inflammasome_priming_mask] = True
@@ -1371,7 +1396,7 @@ class AnCockrellModel:
         # set IL1 pre-IL1
         # set IL18 pre-IL18
         # set P/DAMPs P/DAMPs + 10
-        locations = self.macro_locations[pyroptosis_mask].astype(np.int64)
+        locations = self.macro_locations[pyroptosis_mask].astype(np.int32)
         self.IL1[tuple(locations.T)] = self.macro_pre_il1[pyroptosis_mask]  # ACK: why not +=?
         self.IL18[tuple(locations.T)] = self.macro_pre_il18[pyroptosis_mask]  # ACK: why not +=?
         self.P_DAMPS[tuple(locations.T)] += self.pyroptosis_macro_pdamps_secretion
@@ -1386,7 +1411,7 @@ class AnCockrellModel:
         if num_macro_creation_locations > 0:
             for loc_idx in cast(
                 np.ndarray,
-                np.random.choice(
+                self.rng.choice(
                     num_macro_creation_locations,
                     num_to_pyroptose,
                     replace=num_macro_creation_locations < num_to_pyroptose,
@@ -1431,23 +1456,23 @@ class AnCockrellModel:
         #   ]
 
         t1ifn_activated_mask = self.dc_mask & (
-            self.T1IFN[tuple(self.dc_locations.T.astype(np.int64))]
+            self.T1IFN[tuple(self.dc_locations.T.astype(np.int32))]
             > self.dc_t1ifn_activation_threshold
         )
-        t1ifn_activated_locations = self.dc_locations[t1ifn_activated_mask].astype(np.int64)
+        t1ifn_activated_locations = self.dc_locations[t1ifn_activated_mask].astype(np.int32)
         self.IL12[tuple(t1ifn_activated_locations.T)] += self.dc_il12_secretion
         self.IFNg[tuple(t1ifn_activated_locations.T)] += self.dc_ifng_secretion
 
         il1_activated_mask = t1ifn_activated_mask & (
-            self.IL1[tuple(self.dc_locations.T.astype(np.int64))] > 1
+            self.IL1[tuple(self.dc_locations.T.astype(np.int32))] > 1
         )
-        il1_activated_locations = self.dc_locations[il1_activated_mask].astype(np.int64)
+        il1_activated_locations = self.dc_locations[il1_activated_mask].astype(np.int32)
         self.IL6[tuple(il1_activated_locations.T)] += self.dc_il6_secretion
 
         #  ; consumption of mediators
         #  set T1IFN max list 0 (T1IFN - 0.1)
 
-        locations = self.dc_locations[self.dc_mask].astype(np.int64)
+        locations = self.dc_locations[self.dc_mask].astype(np.int32)
         self.T1IFN[tuple(locations.T)] -= np.minimum(
             self.dc_il6_max_uptake, self.T1IFN[tuple(locations.T)]
         )
@@ -1480,7 +1505,7 @@ class AnCockrellModel:
         chemoattractant_dy = (
             np.roll(chemoattractant, -1, axis=1) - np.roll(chemoattractant, 1, axis=1)
         ) / 2.0
-        locations = self.dc_locations[self.dc_mask].astype(np.int64)
+        locations = self.dc_locations[self.dc_mask].astype(np.int32)
         vecs = np.stack(
             [
                 chemoattractant_dx[tuple(locations.T)],
@@ -1489,7 +1514,7 @@ class AnCockrellModel:
             axis=1,
         )
         vecs += np.clip(
-            np.random.normal(0.0, 1e-5, size=vecs.shape), -1.0, 1.0
+            self.rng.normal(0.0, 1e-5, size=vecs.shape), -1.0, 1.0
         )  # small noise (randomizes direction in absence of gradient)
         norms = np.linalg.norm(vecs, axis=-1)
         norms[norms <= 1e-8] = 1.0  # effectively zero norm vectors will be unnormalized
@@ -1499,11 +1524,15 @@ class AnCockrellModel:
         #    [wiggle
         #    ]
 
-        self.dc_dirs += (np.random.rand(self.MAX_DCS) - np.random.rand(self.MAX_DCS)) * np.pi / 4.0
+        self.dc_dirs += (
+            (self.rng.random(self.MAX_DCS) - self.rng.random(self.MAX_DCS)) * np.pi / 4.0
+        )
         self.dc_dirs[np.where(self.dc_dirs > np.pi)] -= 2 * np.pi
         self.dc_dirs[np.where(self.dc_dirs < -np.pi)] += 2 * np.pi
         self.dc_locations += 0.1 * np.stack([np.cos(self.dc_dirs), np.sin(self.dc_dirs)], axis=1)
-        self.dc_locations = np.mod(self.dc_locations, self.geometry)
+        self.dc_locations[:] = np.mod(self.dc_locations, self.geometry).astype(
+            np.float32, copy=False
+        )
 
         self._destack(mask=self.dc_mask, locations=self.dc_locations)
 
@@ -1585,7 +1614,7 @@ class AnCockrellModel:
         #       [set T1IFN T1IFN + 0.75
         #  ]
         mask = (self.epithelium == EpiType.Healthy) & (
-            np.random.rand(*self.geometry) < self.epi_t1ifn_secretion_prob
+            self.rng.random(self.geometry) < self.epi_t1ifn_secretion_prob
         )
         self.T1IFN[mask] += self.epi_t1ifn_secretion
 
@@ -1601,7 +1630,7 @@ class AnCockrellModel:
         #       [set P/DAMPs P/DAMPs + metabolic-byproduct]
 
         mask = (self.epithelium == EpiType.Healthy) & (
-            np.random.rand(*self.geometry) < self.epi_pdamps_secretion_prob
+            self.rng.random(self.geometry) < self.epi_pdamps_secretion_prob
         )
         self.P_DAMPS[mask] += (
             self.bat_metabolic_byproduct if self.is_bat else self.human_metabolic_byproduct
@@ -1642,7 +1671,7 @@ class AnCockrellModel:
         pmn_spawn_mask = (
             (self.endothelial_adhesion_counter > self.activated_endo_adhesion_threshold)
             & (self.endothelial_activation == EndoType.Activated)
-            & (np.random.rand(*self.geometry) < self.activated_endo_pmn_spawn_prob)
+            & (self.rng.random(self.geometry) < self.activated_endo_pmn_spawn_prob)
         )
         for r, c in zip(*np.where(pmn_spawn_mask)):
             self.create_pmn(location=(r, c), age=0, jump_dist=self.activated_endo_pmn_spawn_dist)
@@ -1675,7 +1704,7 @@ class AnCockrellModel:
 
     @staticmethod
     def _diffuse_molecule_field(
-        molecule_field: np.ndarray, diffusion_constant: Union[float, np.float64]
+        molecule_field: np.ndarray, diffusion_constant: Union[float, np.float32]
     ):
         # based on description at https://ccl.northwestern.edu/netlogo/docs/dict/diffuse.html
         molecule_field[:, :] = (1 - diffusion_constant) * molecule_field + diffusion_constant * (
@@ -1799,12 +1828,12 @@ class AnCockrellModel:
                 else:
                     self._expand_nk_arrays()
             if loc is None:
-                self.nk_locations[self.nk_pointer, :] = np.array(self.geometry) * np.random.rand(2)
+                self.nk_locations[self.nk_pointer, :] = np.array(self.geometry) * self.rng.random(2)
             else:
                 self.nk_locations[self.nk_pointer, :] = loc
 
             if theta is None:
-                self.nk_dirs[self.nk_pointer] = 2 * np.pi * np.random.rand() - np.pi
+                self.nk_dirs[self.nk_pointer] = 2 * np.pi * self.rng.random() - np.pi
             else:
                 self.nk_dirs[self.nk_pointer] = ((theta + np.pi) % (2 * np.pi)) - np.pi
             # self.nk_age[self.nk_pointer] = 0 unused
@@ -1893,14 +1922,14 @@ class AnCockrellModel:
                     "Max macrophages exceeded, you may want to change the MAX_MACROPHAGES parameter."
                 )
         if loc is None:
-            self.macro_locations[self.macro_pointer, :] = np.array(self.geometry) * np.random.rand(
+            self.macro_locations[self.macro_pointer, :] = np.array(self.geometry) * self.rng.random(
                 2
             )
         else:
             self.macro_locations[self.macro_pointer, :] = loc
 
         if theta is None:
-            self.macro_dirs[self.macro_pointer] = 2 * np.pi * np.random.rand() - np.pi
+            self.macro_dirs[self.macro_pointer] = 2 * np.pi * self.rng.random() - np.pi
         else:
             self.macro_dirs[self.macro_pointer] = ((theta + np.pi) % 2 * np.pi) - np.pi
 
@@ -2000,12 +2029,12 @@ class AnCockrellModel:
                     "Max DCs exceeded, you may want to change the MAX_DCS parameter."
                 )
         if loc is None:
-            self.dc_locations[self.dc_pointer, :] = np.array(self.geometry) * np.random.rand(2)
+            self.dc_locations[self.dc_pointer, :] = np.array(self.geometry) * self.rng.random(2)
         else:
             self.dc_locations[self.dc_pointer, :] = loc
 
         if theta is None:
-            self.dc_dirs[self.dc_pointer] = 2 * np.pi * np.random.rand() - np.pi
+            self.dc_dirs[self.dc_pointer] = 2 * np.pi * self.rng.random() - np.pi
         else:
             self.dc_dirs[self.dc_pointer] = theta
         self.dc_mask[self.dc_pointer] = True
@@ -2082,12 +2111,12 @@ class AnCockrellModel:
             if self.pmn_pointer >= self.MAX_PMNS:
                 self._expand_pmn_arrays()
         if location is None:
-            self.pmn_locations[self.pmn_pointer, :] = np.array(self.geometry) * np.random.rand(2)
+            self.pmn_locations[self.pmn_pointer, :] = np.array(self.geometry) * self.rng.random(2)
         else:
-            self.pmn_locations[self.pmn_pointer, :] = np.array(location).astype(np.float64)
+            self.pmn_locations[self.pmn_pointer, :] = np.array(location).astype(np.float32)
 
         if theta is None:
-            theta = 2 * np.pi * np.random.rand() - np.pi
+            theta = 2 * np.pi * self.rng.random() - np.pi
         else:
             theta = ((theta + np.pi) % (2 * np.pi)) - np.pi
         self.pmn_dirs[self.pmn_pointer] = theta
@@ -2155,14 +2184,14 @@ class AnCockrellModel:
         """
         location_used = np.zeros(self.geometry, dtype=bool)
         agent_indices = np.where(mask)[0]
-        np.random.shuffle(agent_indices)
+        self.rng.shuffle(agent_indices)
         for idx in agent_indices:
             if randomize:
                 attempts = 10
                 while location_used[tuple(locations[idx, :].astype(int))] and attempts > 0:
                     attempts -= 1
                     # jump no more than a unit in an arbitrary direction
-                    perturbation = np.random.normal(0, 0.5, size=2)
+                    perturbation = self.rng.normal(0, 0.5, size=2)
                     perturbation /= np.maximum(1.0, np.linalg.norm(perturbation))
                     locations[idx, :] += perturbation
                     locations[idx, :] = np.mod(locations[idx, :], self.geometry)
@@ -2329,7 +2358,10 @@ class AnCockrellModel:
 
                 field_value = getattr(self, class_field.name)
 
-                if self.field_is_control(class_field):
+                if self.field_is_rng(class_field):
+                    ds = grp.create_dataset(class_field.name, data=np.void(dill.dumps(field_value)))
+                    ds.attrs["type"] = class_field.metadata["type"]
+                elif self.field_is_control(class_field):
                     ds = grp.create_dataset(class_field.name, data=np.void(dill.dumps(field_value)))
                     ds.attrs["type"] = class_field.metadata["type"]
                     ds_val = grp.create_dataset(
@@ -2428,18 +2460,27 @@ class AnCockrellModel:
         measurement_fields = [f.name for f in fields(cls) if cls.field_is_measurement(f)]
         # controls
         control_fields = [f.name for f in fields(cls) if cls.field_is_control(f)]
+        # rng state
+        rng_fields = [f.name for f in fields(cls) if cls.field_is_rng(f)]
 
         with h5py.File(filename, "r") as h5file:
-            grp: h5py.Group = h5file[str(time)]
+            grp: h5py.Group = cast(h5py.Group, h5file[str(time)])
 
             controls = {f: dill.loads(grp[f][()]) for f in control_fields}
             init_fields = {f: cls.fix_scalar_type(grp[f][()]) for f in non_cell_init_fields}
 
             # parameters, molecular fields, and grid-agents are loaded via init
-            # as are the controls
+            # as are the controls. skip_post_init_seeding avoids re-running the
+            # initial infection/agent-creation, since that data is restored below.
             model = cls(
                 **dict(init_fields, **controls),
+                skip_post_init_seeding=True,
             )
+
+            # restore the rng to its exact state at save time, so that continuing the
+            # simulation from this checkpoint reproduces the original trajectory
+            for f in rng_fields:
+                setattr(model, f, dill.loads(grp[f][()]))
 
             # scalars not initialized by init
             model.time = int(grp["time"][()])
@@ -2511,12 +2552,16 @@ class AnCockrellModel:
         return hasattr(f, "metadata") and "type" in f.metadata and f.metadata["type"] == "control"
 
     @staticmethod
+    def field_is_rng(f):
+        return hasattr(f, "metadata") and "type" in f.metadata and f.metadata["type"] == "rng"
+
+    @staticmethod
     def fix_scalar_type(f):
         if isinstance(f, np.ndarray):
             if np.issubdtype(f.dtype, np.floating):
                 return f.astype(np.float32)
             elif np.issubdtype(f.dtype, np.integer):
-                return f.astype(np.int64)
+                return f.astype(np.int32)
             else:
                 return f
         elif np.issubdtype(f, np.floating):
