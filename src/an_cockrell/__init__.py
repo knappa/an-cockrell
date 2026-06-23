@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from attr import Factory, define, field, fields
 from matplotlib import markers
+from numpy.random.bit_generator import SeedSequence
 
 BIG_NUM = 3000
 MEDIUM_NUM = 200
@@ -73,11 +74,13 @@ class AnCockrellModel:
     HARD_BOUND: bool = field(default=True, metadata={"type": "bookkeeping"})
     # set by load() to skip the initial infection/agent-creation in __attrs_post_init__,
     # since that data is already being restored from a checkpoint
-    _skip_post_init_seeding: bool = field(default=False, metadata={"type": "bookkeeping"})
+    _skip_post_init_seeding: bool = field(
+        default=False, alias="skip_post_init_seeding", metadata={"type": "bookkeeping"}
+    )
 
     # seed for the model's random number generator. None means an unpredictable,
     # OS-provided seed (i.e. non-reproducible runs)
-    seed: Optional[int] = field(default=None, metadata={"type": "init_parameter"})
+    seed: Optional[int | SeedSequence] = field(default=None, metadata={"type": "init_parameter"})
     rng: np.random.Generator = field(
         init=False,
         default=Factory(lambda self: np.random.default_rng(self.seed), takes_self=True),
@@ -2361,19 +2364,30 @@ class AnCockrellModel:
                 if self.field_is_rng(class_field):
                     ds = grp.create_dataset(class_field.name, data=np.void(dill.dumps(field_value)))
                     ds.attrs["type"] = class_field.metadata["type"]
+                    ds.attrs["serialized"] = True
                 elif self.field_is_control(class_field):
                     ds = grp.create_dataset(class_field.name, data=np.void(dill.dumps(field_value)))
                     ds.attrs["type"] = class_field.metadata["type"]
+                    ds.attrs["serialized"] = True
+
                     ds_val = grp.create_dataset(
                         class_field.name + "_value", shape=(), data=field_value(self.time - 1)
                     )
                     ds_val.attrs["type"] = class_field.metadata["type"] + "_value"
+                    ds_val.attrs["serialized"] = False
                 elif np.isscalar(field_value):
                     # scalars can be directly saved
                     ds = grp.create_dataset(
                         class_field.name, shape=(), dtype=type(field_value), data=field_value
                     )
                     ds.attrs["type"] = class_field.metadata["type"]
+                    ds.attrs["serialized"] = False
+                elif not isinstance(field_value, np.ndarray):
+                    # non-scalar, non-array python objects (e.g. a None or
+                    # SeedSequence seed) are serialized with dill, like the rng
+                    ds = grp.create_dataset(class_field.name, data=np.void(dill.dumps(field_value)))
+                    ds.attrs["type"] = class_field.metadata["type"]
+                    ds.attrs["serialized"] = True
                 else:
                     # numpy arrays for non-grid agents need a bit of filtering first
                     # filter agent arrays to just the meaningful entries
@@ -2398,6 +2412,7 @@ class AnCockrellModel:
                         compression_opts=9,
                     )
                     ds.attrs["type"] = class_field.metadata["type"]
+                    ds.attrs["serialized"] = False
                     if self.field_is_molecule(class_field) or self.field_is_grid_agent(class_field):
                         ds.dims[0].label = "x"
                         ds.dims[1].label = "y"
@@ -2466,8 +2481,18 @@ class AnCockrellModel:
         with h5py.File(filename, "r") as h5file:
             grp: h5py.Group = cast(h5py.Group, h5file[str(time)])
 
-            controls = {f: dill.loads(grp[f][()]) for f in control_fields}
-            init_fields = {f: cls.fix_scalar_type(grp[f][()]) for f in non_cell_init_fields}
+            def dataset(key: str) -> h5py.Dataset:
+                return cast(h5py.Dataset, grp[key])
+
+            controls = {f: dill.loads(dataset(f)[()]) for f in control_fields}
+            init_fields = {
+                f: (
+                    dill.loads(dataset(f)[()])
+                    if dataset(f).attrs.get("serialized", False)
+                    else cls.fix_scalar_type(dataset(f)[()])
+                )
+                for f in non_cell_init_fields
+            }
 
             # parameters, molecular fields, and grid-agents are loaded via init
             # as are the controls. skip_post_init_seeding avoids re-running the
@@ -2480,17 +2505,17 @@ class AnCockrellModel:
             # restore the rng to its exact state at save time, so that continuing the
             # simulation from this checkpoint reproduces the original trajectory
             for f in rng_fields:
-                setattr(model, f, dill.loads(grp[f][()]))
+                setattr(model, f, dill.loads(dataset(f)[()]))
 
             # scalars not initialized by init
-            model.time = int(grp["time"][()])
+            model.time = int(dataset("time")[()])
             for f in measurement_fields:
-                setattr(model, f, cls.fix_scalar_type(grp[f][()]))
+                setattr(model, f, cls.fix_scalar_type(dataset(f)[()]))
 
             # agents
             # ensure there is enough space for agents
             num_cells = {
-                cell_type: grp[f"{cell_type}_locations"].shape[0] for cell_type in cell_types
+                cell_type: dataset(f"{cell_type}_locations").shape[0] for cell_type in cell_types
             }
             for cell_type in cell_types:
                 getattr(model, f"_expand_{cell_type}_arrays")(num_cells[cell_type])
@@ -2498,7 +2523,7 @@ class AnCockrellModel:
             for f in cell_fields:
                 cell_type = f.split("_")[0]
                 model_field = getattr(model, f)
-                model_field[: num_cells[cell_type]] = grp[f][()]
+                model_field[: num_cells[cell_type]] = dataset(f)[()]
             # configure the bookkeeping fields
             for cell_type in cell_types:
                 setattr(model, f"num_{cell_type}s", num_cells[cell_type])
