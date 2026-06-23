@@ -61,6 +61,26 @@ epithelial_cm = matplotlib.colors.ListedColormap(
     )
 )
 
+def mod_float32(x: np.ndarray, mod: Tuple[int, int]) -> np.ndarray:
+    """
+    Computes the modulus of a float32 array with respect to a 2D grid size.
+
+    :param x: input array of shape (N, 2) or (2,)
+    :param mod: tuple representing the grid size (height, width)
+    :return: array of shape (N, 2) or (2,) with values wrapped around the grid
+    """
+    one_d = False
+    if x.ndim == 1:
+        x = x.reshape(1, -1)
+        one_d = True
+
+    temp = np.mod(np.array(x).astype(np.float32), np.array(mod).astype(np.float32))
+    
+    if one_d:
+        temp = temp[0]
+
+    return temp
+
 
 # noinspection PyPep8Naming
 @define(kw_only=True)
@@ -978,9 +998,7 @@ class AnCockrellModel:
         self.pmn_dirs[np.where(self.pmn_dirs < -np.pi)] += 2 * np.pi
         directions = np.stack([np.cos(self.pmn_dirs), np.sin(self.pmn_dirs)], axis=1)
         self.pmn_locations += 0.1 * directions
-        self.pmn_locations[:] = np.mod(self.pmn_locations, self.geometry).astype(
-            np.float32, copy=False
-        )
+        self.pmn_locations[:] = mod_float32(self.pmn_locations, self.geometry)
 
         self._destack(mask=self.pmn_mask, locations=self.pmn_locations)
 
@@ -1061,9 +1079,7 @@ class AnCockrellModel:
         self.nk_dirs[np.where(self.nk_dirs < -np.pi)] += 2 * np.pi
         directions = np.stack([np.cos(self.nk_dirs), np.sin(self.nk_dirs)], axis=1)
         self.nk_locations += 0.1 * directions
-        self.nk_locations[:] = np.mod(self.nk_locations, self.geometry).astype(
-            np.float32, copy=False
-        )
+        self.nk_locations[:] = mod_float32(self.nk_locations, self.geometry)
 
         self._destack(mask=self.nk_mask, locations=self.nk_locations)
 
@@ -1179,9 +1195,7 @@ class AnCockrellModel:
         self.macro_locations += 0.1 * np.stack(
             [np.cos(self.macro_dirs), np.sin(self.macro_dirs)], axis=1
         )
-        self.macro_locations[:] = np.mod(self.macro_locations, self.geometry).astype(
-            np.float32, copy=False
-        )
+        self.macro_locations[:] = mod_float32(self.macro_locations, self.geometry)
 
         self._destack(mask=self.macro_mask, locations=self.macro_locations)
 
@@ -1533,9 +1547,7 @@ class AnCockrellModel:
         self.dc_dirs[np.where(self.dc_dirs > np.pi)] -= 2 * np.pi
         self.dc_dirs[np.where(self.dc_dirs < -np.pi)] += 2 * np.pi
         self.dc_locations += 0.1 * np.stack([np.cos(self.dc_dirs), np.sin(self.dc_dirs)], axis=1)
-        self.dc_locations[:] = np.mod(self.dc_locations, self.geometry).astype(
-            np.float32, copy=False
-        )
+        self.dc_locations[:] = mod_float32(self.dc_locations, self.geometry)
 
         self._destack(mask=self.dc_mask, locations=self.dc_locations)
 
@@ -2124,7 +2136,7 @@ class AnCockrellModel:
             theta = ((theta + np.pi) % (2 * np.pi)) - np.pi
         self.pmn_dirs[self.pmn_pointer] = theta
 
-        self.pmn_locations[self.pmn_pointer] = np.mod(
+        self.pmn_locations[self.pmn_pointer] = mod_float32(
             self.pmn_locations[self.pmn_pointer]
             + jump_dist * np.array([np.cos(theta), np.sin(theta)]),
             self.geometry,
@@ -2197,7 +2209,7 @@ class AnCockrellModel:
                     perturbation = self.rng.normal(0, 0.5, size=2)
                     perturbation /= np.maximum(1.0, np.linalg.norm(perturbation))
                     locations[idx, :] += perturbation
-                    locations[idx, :] = np.mod(locations[idx, :], self.geometry)
+                    locations[idx, :] = mod_float32(locations[idx, :], self.geometry)
                 location_used[tuple(locations[idx, :].astype(int))] = True
             else:
                 if not location_used[tuple(locations[idx, :].astype(int))]:
@@ -2214,7 +2226,7 @@ class AnCockrellModel:
                     locations[idx, :] += unused_locations[closest_idx, :] - locations[
                         idx, :
                     ].astype(int)
-                    locations[idx, :] = np.mod(locations[idx, :], self.geometry)
+                    locations[idx, :] = mod_float32(locations[idx, :], self.geometry)
                     location_used[tuple(locations[idx, :].astype(int))] = True
 
     def plot_agents(self, ax: matplotlib.axes.Axes, *, base_zorder: int = -1):
