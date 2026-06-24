@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from enum import IntEnum
+from io import BytesIO
 from typing import List, Optional, Tuple, Union, cast
 
 import dill
@@ -2356,10 +2357,10 @@ class AnCockrellModel:
     ######################################################################
     # saving and loading the model state
 
-    def save(self, filename: str, *, write_mode: str = "a"):
+    def save(self, filename: str | BytesIO, *, write_mode: str = "a"):
         """
         Record the model state to an HDF5 file.
-        :param filename:
+        :param filename: filename string, BytesIO, or anything that works in h5py.File
         :param write_mode: e.g. append, write
         :return:
         """
