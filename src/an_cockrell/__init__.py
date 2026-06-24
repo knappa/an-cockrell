@@ -62,6 +62,7 @@ epithelial_cm = matplotlib.colors.ListedColormap(
     )
 )
 
+
 def mod_float32(x: np.ndarray, mod: Tuple[int, int]) -> np.ndarray:
     """
     Computes the modulus of a float32 array with respect to a 2D grid size.
@@ -76,7 +77,7 @@ def mod_float32(x: np.ndarray, mod: Tuple[int, int]) -> np.ndarray:
         one_d = True
 
     temp = np.mod(np.array(x).astype(np.float32), np.array(mod).astype(np.float32))
-    
+
     if one_d:
         temp = temp[0]
 
@@ -308,8 +309,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_extracellular_virus(self) -> float:
-        return float(np.sum(self.extracellular_virus))
+    def mean_extracellular_virus(self) -> float:
+        return float(np.mean(self.extracellular_virus))
 
     P_DAMPS: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -317,8 +318,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_P_DAMPS(self) -> float:
-        return float(np.sum(self.P_DAMPS))
+    def mean_P_DAMPS(self) -> float:
+        return float(np.mean(self.P_DAMPS))
 
     ROS: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -326,8 +327,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_ROS(self) -> float:
-        return float(np.sum(self.ROS))
+    def mean_ROS(self) -> float:
+        return float(np.mean(self.ROS))
 
     PAF: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -335,8 +336,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_PAF(self) -> float:
-        return float(np.sum(self.PAF))
+    def mean_PAF(self) -> float:
+        return float(np.mean(self.PAF))
 
     TNF: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -344,8 +345,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_TNF(self) -> float:
-        return float(np.sum(self.TNF))
+    def mean_TNF(self) -> float:
+        return float(np.mean(self.TNF))
 
     IL1: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -353,8 +354,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_IL1(self) -> float:
-        return float(np.sum(self.IL1))
+    def mean_IL1(self) -> float:
+        return float(np.mean(self.IL1))
 
     IL6: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -362,8 +363,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_IL6(self) -> float:
-        return float(np.sum(self.IL6))
+    def mean_IL6(self) -> float:
+        return float(np.mean(self.IL6))
 
     IL8: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -371,8 +372,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_IL8(self) -> float:
-        return float(np.sum(self.IL8))
+    def mean_IL8(self) -> float:
+        return float(np.mean(self.IL8))
 
     IL10: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -380,8 +381,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_IL10(self) -> float:
-        return float(np.sum(self.IL10))
+    def mean_IL10(self) -> float:
+        return float(np.mean(self.IL10))
 
     IL12: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -389,8 +390,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_IL12(self) -> float:
-        return float(np.sum(self.IL12))
+    def mean_IL12(self) -> float:
+        return float(np.mean(self.IL12))
 
     IL18: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -398,8 +399,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_IL18(self) -> float:
-        return float(np.sum(self.IL18))
+    def mean_IL18(self) -> float:
+        return float(np.mean(self.IL18))
 
     IFNg: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -407,8 +408,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_IFNg(self) -> float:
-        return float(np.sum(self.IFNg))
+    def mean_IFNg(self) -> float:
+        return float(np.mean(self.IFNg))
 
     T1IFN: np.ndarray = field(
         default=Factory(lambda self: np.zeros(self.geometry, dtype=np.float32), takes_self=True),
@@ -416,8 +417,8 @@ class AnCockrellModel:
     )
 
     @property
-    def total_T1IFN(self) -> float:
-        return float(np.sum(self.T1IFN))
+    def mean_T1IFN(self) -> float:
+        return float(np.mean(self.T1IFN))
 
     ######################################################################
 
@@ -579,8 +580,13 @@ class AnCockrellModel:
     # computed properties
 
     @property
-    def total_intracellular_virus(self) -> float:
-        return float(np.sum(self.epi_intracellular_virus[self.epithelium == EpiType.Infected]))
+    def mean_intracellular_virus(self) -> float:
+        infected_intracellular_virus = self.epi_intracellular_virus[
+            self.epithelium == EpiType.Infected
+        ]
+        if infected_intracellular_virus.size == 0:
+            return 0.0
+        return float(np.mean(infected_intracellular_virus))
 
     @property
     def system_health(self) -> float:

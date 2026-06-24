@@ -192,18 +192,18 @@ variational_params = [
 ]
 
 param_list = np.full((num_sims, len(variational_params)), -1, dtype=np.float64)
-total_P_DAMPS = np.full((num_sims, num_steps), -1, dtype=np.float64)
-total_T1IFN = np.full((num_sims, num_steps), -1, dtype=np.float64)
-total_TNF = np.full((num_sims, num_steps), -1, dtype=np.float64)
-total_IFNg = np.full((num_sims, num_steps), -1, dtype=np.float64)
-total_IL6 = np.full((num_sims, num_steps), -1, dtype=np.float64)
-total_IL1 = np.full((num_sims, num_steps), -1, dtype=np.float64)
-total_IL8 = np.full((num_sims, num_steps), -1, dtype=np.float64)
-total_IL10 = np.full((num_sims, num_steps), -1, dtype=np.float64)
-total_IL12 = np.full((num_sims, num_steps), -1, dtype=np.float64)
-total_IL18 = np.full((num_sims, num_steps), -1, dtype=np.float64)
-total_extracellular_virus = np.full((num_sims, num_steps), -1, dtype=np.float64)
-total_intracellular_virus = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_P_DAMPS = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_T1IFN = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_TNF = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_IFNg = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_IL6 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_IL1 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_IL8 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_IL10 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_IL12 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_IL18 = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_extracellular_virus = np.full((num_sims, num_steps), -1, dtype=np.float64)
+mean_intracellular_virus = np.full((num_sims, num_steps), -1, dtype=np.float64)
 apoptosis_eaten_counter = np.full((num_sims, num_steps), -1, dtype=np.float64)
 infected_epis = np.full((num_sims, num_steps), -1, dtype=np.float64)
 dead_epis = np.full((num_sims, num_steps), -1, dtype=np.float64)
@@ -223,10 +223,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_P_DAMPS",
+        "mean_P_DAMPS",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_P_DAMPS,
+        data=mean_P_DAMPS,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -234,10 +234,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_T1IFN",
+        "mean_T1IFN",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_T1IFN,
+        data=mean_T1IFN,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -245,10 +245,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_TNF",
+        "mean_TNF",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_TNF,
+        data=mean_TNF,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -256,10 +256,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_IFNg",
+        "mean_IFNg",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_IFNg,
+        data=mean_IFNg,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -267,10 +267,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_IL6",
+        "mean_IL6",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_IL6,
+        data=mean_IL6,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -278,10 +278,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_IL1",
+        "mean_IL1",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_IL1,
+        data=mean_IL1,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -289,10 +289,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_IL8",
+        "mean_IL8",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_IL8,
+        data=mean_IL8,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -300,10 +300,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_IL10",
+        "mean_IL10",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_IL10,
+        data=mean_IL10,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -311,10 +311,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_IL12",
+        "mean_IL12",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_IL12,
+        data=mean_IL12,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -322,10 +322,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_IL18",
+        "mean_IL18",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_IL18,
+        data=mean_IL18,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -333,10 +333,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_extracellular_virus",
+        "mean_extracellular_virus",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_extracellular_virus,
+        data=mean_extracellular_virus,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -344,10 +344,10 @@ with h5py.File("simulation-statistics.hdf5", "w") as f:
         fletcher32=True,
     )
     f.create_dataset(
-        "total_intracellular_virus",
+        "mean_intracellular_virus",
         (num_sims, num_steps),
         dtype=np.float64,
-        data=total_intracellular_virus,
+        data=mean_intracellular_virus,
         chunks=(100, num_steps),
         compression="gzip",
         compression_opts=9,
@@ -433,18 +433,18 @@ for sim_idx in trange(num_sims, desc="simulation"):
     for step_idx in trange(num_steps):
         model.time_step()
 
-        total_P_DAMPS[sim_idx, step_idx] = model.total_P_DAMPS
-        total_T1IFN[sim_idx, step_idx] = model.total_T1IFN
-        total_TNF[sim_idx, step_idx] = model.total_TNF
-        total_IFNg[sim_idx, step_idx] = model.total_IFNg
-        total_IL6[sim_idx, step_idx] = model.total_IL6
-        total_IL1[sim_idx, step_idx] = model.total_IL1
-        total_IL8[sim_idx, step_idx] = model.total_IL8
-        total_IL10[sim_idx, step_idx] = model.total_IL10
-        total_IL12[sim_idx, step_idx] = model.total_IL12
-        total_IL18[sim_idx, step_idx] = model.total_IL18
-        total_extracellular_virus[sim_idx, step_idx] = model.total_extracellular_virus
-        total_intracellular_virus[sim_idx, step_idx] = model.total_intracellular_virus
+        mean_P_DAMPS[sim_idx, step_idx] = model.mean_P_DAMPS
+        mean_T1IFN[sim_idx, step_idx] = model.mean_T1IFN
+        mean_TNF[sim_idx, step_idx] = model.mean_TNF
+        mean_IFNg[sim_idx, step_idx] = model.mean_IFNg
+        mean_IL6[sim_idx, step_idx] = model.mean_IL6
+        mean_IL1[sim_idx, step_idx] = model.mean_IL1
+        mean_IL8[sim_idx, step_idx] = model.mean_IL8
+        mean_IL10[sim_idx, step_idx] = model.mean_IL10
+        mean_IL12[sim_idx, step_idx] = model.mean_IL12
+        mean_IL18[sim_idx, step_idx] = model.mean_IL18
+        mean_extracellular_virus[sim_idx, step_idx] = model.mean_extracellular_virus
+        mean_intracellular_virus[sim_idx, step_idx] = model.mean_intracellular_virus
         apoptosis_eaten_counter[sim_idx, step_idx] = model.apoptosis_eaten_counter
         infected_epis[sim_idx, step_idx] = np.sum(model.epithelium == EpiType.Infected)
         dead_epis[sim_idx, step_idx] = np.sum(model.epithelium == EpiType.Dead)
@@ -453,18 +453,18 @@ for sim_idx in trange(num_sims, desc="simulation"):
 
     with h5py.File("simulation-statistics.hdf5", "r+") as f:
         f["param_list"][sim_idx, :] = param_list[sim_idx, :]
-        f["total_P_DAMPS"][sim_idx, :] = total_P_DAMPS[sim_idx, :]
-        f["total_T1IFN"][sim_idx, :] = total_T1IFN[sim_idx, :]
-        f["total_TNF"][sim_idx, :] = total_TNF[sim_idx, :]
-        f["total_IFNg"][sim_idx, :] = total_IFNg[sim_idx, :]
-        f["total_IL6"][sim_idx, :] = total_IL6[sim_idx, :]
-        f["total_IL1"][sim_idx, :] = total_IL1[sim_idx, :]
-        f["total_IL8"][sim_idx, :] = total_IL8[sim_idx, :]
-        f["total_IL10"][sim_idx, :] = total_IL10[sim_idx, :]
-        f["total_IL12"][sim_idx, :] = total_IL12[sim_idx, :]
-        f["total_IL18"][sim_idx, :] = total_IL18[sim_idx, :]
-        f["total_extracellular_virus"][sim_idx, :] = total_extracellular_virus[sim_idx, :]
-        f["total_intracellular_virus"][sim_idx, :] = total_intracellular_virus[sim_idx, :]
+        f["mean_P_DAMPS"][sim_idx, :] = mean_P_DAMPS[sim_idx, :]
+        f["mean_T1IFN"][sim_idx, :] = mean_T1IFN[sim_idx, :]
+        f["mean_TNF"][sim_idx, :] = mean_TNF[sim_idx, :]
+        f["mean_IFNg"][sim_idx, :] = mean_IFNg[sim_idx, :]
+        f["mean_IL6"][sim_idx, :] = mean_IL6[sim_idx, :]
+        f["mean_IL1"][sim_idx, :] = mean_IL1[sim_idx, :]
+        f["mean_IL8"][sim_idx, :] = mean_IL8[sim_idx, :]
+        f["mean_IL10"][sim_idx, :] = mean_IL10[sim_idx, :]
+        f["mean_IL12"][sim_idx, :] = mean_IL12[sim_idx, :]
+        f["mean_IL18"][sim_idx, :] = mean_IL18[sim_idx, :]
+        f["mean_extracellular_virus"][sim_idx, :] = mean_extracellular_virus[sim_idx, :]
+        f["mean_intracellular_virus"][sim_idx, :] = mean_intracellular_virus[sim_idx, :]
         f["apoptosis_eaten_counter"][sim_idx, :] = apoptosis_eaten_counter[sim_idx, :]
         f["infected_epis"][sim_idx, :] = infected_epis[sim_idx, :]
         f["dead_epis"][sim_idx, :] = dead_epis[sim_idx, :]
