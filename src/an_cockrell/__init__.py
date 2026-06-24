@@ -76,7 +76,15 @@ def mod_float32(x: np.ndarray, mod: Tuple[int, int]) -> np.ndarray:
         x = x.reshape(1, -1)
         one_d = True
 
-    temp = np.mod(np.array(x).astype(np.float32), np.array(mod).astype(np.float32))
+    mod_array = np.array(mod).astype(np.float32)
+    temp = np.mod(np.array(x).astype(np.float32), mod_array)
+
+    # For a tiny negative input, np.mod can return exactly the modulus in
+    # float32 (since `mod - tiny == mod` at that precision), which becomes an
+    # out-of-bounds index when cast to int. Nudge any such value to the largest
+    # float32 strictly below the modulus, preserving the near-edge position.
+    largest_below_mod = np.nextafter(mod_array, np.float32(-np.inf))
+    temp = np.minimum(temp, largest_below_mod)
 
     if one_d:
         temp = temp[0]
