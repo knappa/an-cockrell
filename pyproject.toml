@@ -39,7 +39,7 @@ Issues = "https://github.com/knappa/an-cockrell/issues"
 # the clean tag version (e.g. v0.1.1 -> 0.1.1); commits after a tag get a
 # unique, monotonically increasing dev version (e.g. 0.1.2.dev3+g946e737).
 # When installing from a non-tagged commit without git metadata, fall back to:
-fallback_version = "0.1.2"
+fallback_version = "0.1.3"
 
 [tool.black]
 line-length = 100
