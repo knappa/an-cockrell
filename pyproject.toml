@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=80.0"]
+requires = ["setuptools>=80.0", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "an_cockrell"
-version = "0.1.0"
+dynamic = ["version"]
 authors = [
     { name = "Adam C. Knapp", email = "adam.knapp@medicine.ufl.edu" },
 ]
@@ -33,6 +33,13 @@ all = [
 [project.urls]
 Homepage = "https://github.com/knappa/an-cockrell"
 Issues = "https://github.com/knappa/an-cockrell/issues"
+
+[tool.setuptools_scm]
+# Version is derived automatically from git tags/commits. Tagged commits get
+# the clean tag version (e.g. v0.1.1 -> 0.1.1); commits after a tag get a
+# unique, monotonically increasing dev version (e.g. 0.1.2.dev3+g946e737).
+# When installing from a non-tagged commit without git metadata, fall back to:
+fallback_version = "0.1.2"
 
 [tool.black]
 line-length = 100
