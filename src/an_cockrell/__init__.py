@@ -1766,7 +1766,7 @@ class AnCockrellModel:
         self.IL8[self.IL8 < self.cleanup_threshold] = 0
         self.ROS[self.ROS < self.cleanup_threshold] = 0
         self.IL12[self.IL12 < self.cleanup_threshold] = 0
-        self.IL8[self.IL8 < self.cleanup_threshold] = 0
+        self.IL18[self.IL18 < self.cleanup_threshold] = 0
         self.P_DAMPS[self.P_DAMPS < self.cleanup_threshold] = 0
 
     def evaporate(self):
