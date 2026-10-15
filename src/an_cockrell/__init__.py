@@ -881,15 +881,16 @@ class AnCockrellModel:
         empty_patches = (self.epithelium == EpiType.Empty) & (self.extracellular_virus == 0)
 
         epi_patches = self.epithelium == EpiType.Healthy
+        epi_patches_count = epi_patches.astype(int)
         epi_neighbors = (
-            np.roll(epi_patches, 1, axis=0)
-            + np.roll(epi_patches, -1, axis=0)
-            + np.roll(epi_patches, 1, axis=1)
-            + np.roll(epi_patches, -1, axis=1)
-            + np.roll(np.roll(epi_patches, 1, axis=0), 1, axis=1)
-            + np.roll(np.roll(epi_patches, 1, axis=0), -1, axis=1)
-            + np.roll(np.roll(epi_patches, -1, axis=0), 1, axis=1)
-            + np.roll(np.roll(epi_patches, -1, axis=0), -1, axis=1)
+            np.roll(epi_patches_count, 1, axis=0)
+            + np.roll(epi_patches_count, -1, axis=0)
+            + np.roll(epi_patches_count, 1, axis=1)
+            + np.roll(epi_patches_count, -1, axis=1)
+            + np.roll(np.roll(epi_patches_count, 1, axis=0), 1, axis=1)
+            + np.roll(np.roll(epi_patches_count, 1, axis=0), -1, axis=1)
+            + np.roll(np.roll(epi_patches_count, -1, axis=0), 1, axis=1)
+            + np.roll(np.roll(epi_patches_count, -1, axis=0), -1, axis=1)
         )
 
         regrowth_candidate_patches = empty_patches & (epi_neighbors > 2)
