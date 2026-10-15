@@ -914,17 +914,21 @@ class AnCockrellModel:
         #        ]
         #       set epi-regrow-counter 0 ; if sprouts, reset counter to 0
 
+
+        n_regrowth_patches = np.sum(regrowth_patches)
+
+        self.epithelium[regrowth_patches] = EpiType.Healthy
         self.epi_intracellular_virus[regrowth_patches] = 0
         self.epi_cell_membrane[regrowth_patches] = self.rng.integers(
             self.epi_cell_membrane_init_lower,
             self.epi_cell_membrane_init_lower + self.epi_cell_membrane_init_range,
-            size=np.sum(regrowth_patches),
+            size=n_regrowth_patches,
         )
         self.epi_apoptosis_counter[regrowth_patches] = 0
         self.epi_apoptosis_threshold[regrowth_patches] = self.rng.integers(
             self.epi_apoptosis_threshold_lower_regrow,
             self.epi_apoptosis_threshold_lower_regrow + self.epi_apoptosis_threshold_range_regrow,
-            size=np.sum(regrowth_patches),
+            size=n_regrowth_patches,
         )
         self.epi_regrow_counter[regrowth_patches] = 0
 
