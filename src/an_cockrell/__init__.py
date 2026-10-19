@@ -765,9 +765,10 @@ class AnCockrellModel:
 
         :return: nothing
         """
-        # ACK: _actually_ only used in epi-function, contrary to comments. changed name to reflect this
+        # ACK: _actually_ only used in epi-function, contrary to comments.
+        # (Called, but bails for macros) changed name to reflect this
         invasion_mask = (
-            (self.epithelium == EpiType.Healthy)
+            ((self.epithelium == EpiType.Healthy) | (self.epithelium == EpiType.Infected))
             & (self.extracellular_virus > 0)
             & (
                 100 * self.rng.random(self.geometry)
@@ -914,7 +915,6 @@ class AnCockrellModel:
         #                                                    random component as well
         #        ]
         #       set epi-regrow-counter 0 ; if sprouts, reset counter to 0
-
 
         n_regrowth_patches = np.sum(regrowth_patches)
 
