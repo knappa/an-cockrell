@@ -126,16 +126,16 @@ class AnCockrellModel:
     macro_phago_recovery: float = field(default=0.5, metadata={"type": "parameter"})
     macro_phago_limit: int = field(default=1_000, metadata={"type": "parameter"})
 
-    inflammasome_activation_threshold: int = field(
-        default=10, metadata={"type": "parameter"}
+    inflammasome_activation_threshold: float = field(
+        default=10.0, metadata={"type": "parameter"}
     )  # 50 for bats
     inflammasome_priming_threshold: float = field(
         default=1.0, metadata={"type": "parameter"}
     )  # 5.0 for bats
 
-    susceptibility_to_infection: int = field(default=77, metadata={"type": "parameter"})
-    human_endo_activation: int = field(default=5, metadata={"type": "parameter"})
-    bat_endo_activation: int = field(default=10, metadata={"type": "parameter"})
+    susceptibility_to_infection: float = field(default=77.0, metadata={"type": "parameter"})
+    human_endo_activation: float = field(default=5.0, metadata={"type": "parameter"})
+    bat_endo_activation: float = field(default=10.0, metadata={"type": "parameter"})
     bat_metabolic_byproduct: float = field(default=2.0, metadata={"type": "parameter"})
     human_metabolic_byproduct: float = field(default=0.2, metadata={"type": "parameter"})
     viral_incubation_threshold: int = field(default=60, metadata={"type": "parameter"})
@@ -156,10 +156,12 @@ class AnCockrellModel:
     epi_regrowth_counter_threshold: int = field(default=432, metadata={"type": "parameter"})
     epi_cell_membrane_init_lower: int = field(default=975, metadata={"type": "init_parameter"})
     epi_cell_membrane_init_range: int = field(default=51, metadata={"type": "init_parameter"})
-    infected_epithelium_ros_damage_counter_threshold: int = field(
-        default=10, metadata={"type": "parameter"}
+    infected_epithelium_ros_damage_counter_threshold: float = field(
+        default=10.0, metadata={"type": "parameter"}
     )
-    epithelium_ros_damage_counter_threshold: int = field(default=2, metadata={"type": "parameter"})
+    epithelium_ros_damage_counter_threshold: float = field(
+        default=2.0, metadata={"type": "parameter"}
+    )
     epithelium_pdamps_secretion_on_death: float = field(
         default=10.0, metadata={"type": "parameter"}
     )
@@ -178,7 +180,7 @@ class AnCockrellModel:
     infected_epi_il6_secretion: float = field(default=0.10, metadata={"type": "parameter"})
 
     activated_endo_death_threshold: float = field(default=0.5, metadata={"type": "parameter"})
-    activated_endo_adhesion_threshold: float = field(default=36, metadata={"type": "parameter"})
+    activated_endo_adhesion_threshold: float = field(default=36.0, metadata={"type": "parameter"})
     activated_endo_pmn_spawn_prob: float = field(default=0.1, metadata={"type": "parameter"})
     activated_endo_pmn_spawn_dist: float = field(default=5.0, metadata={"type": "parameter"})
 
