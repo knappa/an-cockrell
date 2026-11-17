@@ -476,19 +476,12 @@ class AnCockrellModel:
         metadata={"type": "agent"},
     )
 
-    # NOTE: unused
-    # macro_internal_virus: np.ndarray = field(
-    #   default=Factory(lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float32), takes_self=True)
-    # )
-
     macro_activation: np.ndarray = field(
         default=Factory(
             lambda self: np.zeros(self.MAX_MACROPHAGES, dtype=np.float32), takes_self=True
         ),
         metadata={"type": "agent"},
     )
-
-    # macro_infected: np.ndarray  # unused
 
     macro_cells_eaten: np.ndarray = field(
         default=Factory(
@@ -637,6 +630,30 @@ class AnCockrellModel:
     @property
     def macro_count(self) -> int:
         return self.num_macros
+
+    @property
+    def mean_epi_apoptosis_counter(self) -> float:
+        infected_mask = self.epithelium == EpiType.Infected
+        if np.any(infected_mask):
+            return float(np.mean(self.epi_apoptosis_counter[infected_mask]))
+        else:
+            return 0.0
+
+    @property
+    def mean_epi_ros_damage_healthy(self) -> float:
+        healthy_mask = self.epithelium == EpiType.Healthy
+        if np.any(healthy_mask):
+            return float(np.mean(self.epithelium_ros_damage_counter[healthy_mask]))
+        else:
+            return 0.0
+
+    @property
+    def mean_epi_ros_damage_infected(self) -> float:
+        infected_mask = self.epithelium == EpiType.Infected
+        if np.any(infected_mask):
+            return float(np.mean(self.epithelium_ros_damage_counter[infected_mask]))
+        else:
+            return 0.0
 
     ######################################################################
 
@@ -901,7 +918,9 @@ class AnCockrellModel:
         #  [if count epis-on neighbors > 2 ;; if conditions met, start counter
         #     [if epi-regrow-counter >= 432 ;; regrows starting at 3 days if sufficient neighboring epis
 
-        regrowth_patches = regrowth_candidate_patches & (self.epi_regrow_counter > 432)
+        regrowth_patches = regrowth_candidate_patches & (
+            self.epi_regrow_counter >= self.epi_regrowth_counter_threshold
+        )
 
         #      [sprout 1
         #        [set breed epis ;; 1 epi per patch
@@ -1713,6 +1732,8 @@ class AnCockrellModel:
         for r, c in zip(*np.where(pmn_spawn_mask)):
             self.create_pmn(location=(r, c), age=0, jump_dist=self.activated_endo_pmn_spawn_dist)
 
+        self._destack(mask=self.pmn_mask, locations=self.pmn_locations)
+
         # set adhesion-counter adhesion-counter + 1
         self.endothelial_adhesion_counter[self.endothelial_activation == EndoType.Activated] += 1
 
@@ -2242,9 +2263,12 @@ class AnCockrellModel:
                     if unused_locations.shape[0] == 0:
                         # no space, don't move
                         continue
-                    closest_idx = np.argmin(
-                        np.sum((locations[idx, :] - unused_locations) ** 2, axis=1)
-                    )
+                    geometry = np.asarray(self.geometry)
+                    # Offsets from the agent to each free cell's center, each component wrapped
+                    # into [-size/2, size/2] so distances are measured on the torus.
+                    offsets = (unused_locations + 0.5) - locations[idx, :]
+                    offsets -= geometry * np.round(offsets / geometry)
+                    closest_idx = np.argmin(np.sum(offsets**2, axis=1))
                     locations[idx, :] += unused_locations[closest_idx, :] - locations[
                         idx, :
                     ].astype(int)
